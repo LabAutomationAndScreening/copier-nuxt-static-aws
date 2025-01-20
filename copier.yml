@@ -23,7 +23,15 @@ python_version:
     default: "3.12.7"
 
 # Questions specific to this template
+node_version:
+    type: str
+    help: What version of NodeJS is used for development?
+    default: 22.13.0
 
+pnpm_version:
+    type: str
+    help: What version of pnpm is used for development?
+    default: 9.15.4
 
 # Additional Settings
 _min_copier_version: "9.4"

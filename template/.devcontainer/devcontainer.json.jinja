@@ -12,6 +12,11 @@
       "version": "{% endraw %}{{ python_version }}{% raw %}",
       "installTools": false,
       "optimize": true
+    },
+    "ghcr.io/devcontainers/features/node:1.6.1": {
+      // https://github.com/devcontainers/features/tree/main/src/node
+      "version": "{% endraw %}{{ node_version }}{% raw %}",
+      "pnpmVersion": "{% endraw %}{{ pnpm_version }}{% raw %}"
     }
   },
   "customizations": {
