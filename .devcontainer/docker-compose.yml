@@ -4,7 +4,7 @@ services:
     build:
       context: .
       args:
-        VENV_PATH: /workspaces/copier-nuxt-static-aws/.venv
+        REPO_NAME: copier-nuxt-static-aws
     # You can run `devcontainer-info content-url` in codespaces to see what image base is
     volumes:
       - ..:/workspaces/copier-nuxt-static-aws:cached
