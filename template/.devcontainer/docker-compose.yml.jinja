@@ -10,6 +10,8 @@ services:
       - ..:/workspaces/{% endraw %}{{ repo_name }}{% raw %}:cached
       # Break out the venv folder as a separate docker volume for better performance on Windows hosts
       - python_graphql_lambda_venv:/workspaces/{% endraw %}{{ repo_name }}{% raw %}/graphql_lambda/.venv
+      # Break out the pnpm store folder as a separate docker volume for better performance on Windows hosts
+      - pnpm_store:/workspaces/{% endraw %}{{ repo_name }}{% raw %}/.pnpm-store
     command: sleep infinity
     ports:
       - "{% endraw %}{{ ssh_port_number }}{% raw %}:2222"
@@ -19,3 +21,4 @@ services:
 
 volumes:
   python_graphql_lambda_venv: {}
+  pnpm_store: {}
