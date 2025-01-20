@@ -182,10 +182,10 @@ repos:
 
 -   repo: local
     hooks:
-    -   id: pyright
-        name: pyright
-        entry: bash -c "uv run pyright"
-        files: '.+\.py$'
+    -   id: pyright-graphql-lambda
+        name: pyright-graphql-lambda
+        entry: bash -c "uv run pyright --directory=./graphql_lambda"
+        files: 'graphql_lambda/.+\.py$'
         # don't pass filenames else the command line sees them twice
         pass_filenames: false
         language: system
