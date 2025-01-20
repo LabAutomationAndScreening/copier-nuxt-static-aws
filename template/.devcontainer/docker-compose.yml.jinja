@@ -9,7 +9,7 @@ services:
     volumes:
       - ..:/workspaces/{% endraw %}{{ repo_name }}{% raw %}:cached
       # Break out the venv folder as a separate docker volume for better performance on Windows hosts
-      - python_venv:/workspaces/{% endraw %}{{ repo_name }}{% raw %}/.venv
+      - python_graphql_lambda_venv:/workspaces/{% endraw %}{{ repo_name }}{% raw %}/graphql_lambda/.venv
     command: sleep infinity
     ports:
       - "{% endraw %}{{ ssh_port_number }}{% raw %}:2222"
@@ -18,4 +18,4 @@ services:
 
 
 volumes:
-  python_venv: {}
+  python_graphql_lambda_venv: {}
