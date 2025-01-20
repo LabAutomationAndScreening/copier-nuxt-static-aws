@@ -12,29 +12,29 @@ repos:
 # package management
 - repo: local
   hooks:
-    - id: uv-check
-      name: check pyproject.toml for valid uv config
-      entry: bash -c 'uv lock --check'
+    - id: uv-check-graphql-lambda
+      name: check graphql-lambda pyproject.toml for valid uv config
+      entry: bash -c 'uv lock --check --directory=./graphql_lambda'
       language: system
       pass_filenames: false
       verbose: true
       files: '^pyproject.toml$|^uv.lock$'
 
-    - id: sync-dependencies-on-commit
-      name: ensure python dependencies are up to date during commits
+    - id: sync-dependencies-on-commit-graphql-lambda
+      name: ensure graphql-lambda python dependencies are up to date during commits
       stages: [pre-commit]
        # When the install does change things, it exits 0, so needed to check for the phrase 'operations' in stdout in order to cause things pre-commit command to fail
-      entry: python -c "import subprocess,sys; results=subprocess.run(['uv', 'sync', '--frozen'],timeout=360,capture_output=True); print ('stdout- ' + results.stdout.decode('utf-8', 'strict')); print ('stderr- ' + results.stderr.decode('utf-8', 'strict')); sys.exit(int(results.returncode or int('Installed' in results.stdout.decode('utf-8', 'strict'))));"
+      entry: python -c "import subprocess,sys; results=subprocess.run(['uv', 'sync', '--frozen', '--directory=./graphql_lambda'],timeout=360,capture_output=True); print ('stdout- ' + results.stdout.decode('utf-8', 'strict')); print ('stderr- ' + results.stderr.decode('utf-8', 'strict')); sys.exit(int(results.returncode or int('Installed' in results.stdout.decode('utf-8', 'strict'))));"
       # don't pass filenames else the command line sees them twice
       pass_filenames: false
       language: system
       files: 'uv.lock$'
       verbose: true
 
-    - id: sync-dependencies-post-checkout
-      name: ensure python dependencies are up to date during checkouts
+    - id: sync-dependencies-post-checkout-graphql-lambda
+      name: ensure graphql-lambda python dependencies are up to date during checkouts
       stages: [post-checkout]
-      entry: bash -c 'uv sync --frozen'
+      entry: bash -c 'uv sync --frozen --directory=./graphql_lambda'
       pass_filenames: false
       language: system
       always_run: true
