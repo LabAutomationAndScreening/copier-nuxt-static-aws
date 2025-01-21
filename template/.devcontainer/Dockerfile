@@ -21,5 +21,12 @@ RUN mkdir -p /workspace && \
     chmod -R 777 /workspaces ${PNPM_STORE_PATH} && \
     chgrp -R 0 /workspaces ${PNPM_STORE_PATH}
 
+ARG APP_NAME=default
+ENV APP_NODE_MODULES_PATH=/workspaces/${REPO_NAME}/${APP_NAME}_app/node_modules
+RUN mkdir -p /workspace && \
+    mkdir -p ${APP_NODE_MODULES_PATH} && \
+    chmod -R 777 /workspaces ${APP_NODE_MODULES_PATH} && \
+    chgrp -R 0 /workspaces ${APP_NODE_MODULES_PATH}
+
 # SSH
 EXPOSE 2222

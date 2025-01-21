@@ -5,6 +5,7 @@ services:
       context: .
       args:
         REPO_NAME: {% endraw %}{{ repo_name }}{% raw %}
+        APP_NAME: {% endraw %}{{ app_name }}{% raw %}
     # You can run `devcontainer-info content-url` in codespaces to see what image base is
     volumes:
       - ..:/workspaces/{% endraw %}{{ repo_name }}{% raw %}:cached
@@ -12,6 +13,8 @@ services:
       - python_graphql_lambda_venv:/workspaces/{% endraw %}{{ repo_name }}{% raw %}/graphql_lambda/.venv
       # Break out the pnpm store folder as a separate docker volume for better performance on Windows hosts
       - pnpm_store:/workspaces/{% endraw %}{{ repo_name }}{% raw %}/.pnpm-store
+      # And node_modules
+      - app_node_modules:/workspaces/{% endraw %}{{ repo_name }}{% raw %}/{% endraw %}{{ repo_name }}{% raw %}_app/node_modules
     command: sleep infinity
     ports:
       - "{% endraw %}{{ ssh_port_number }}{% raw %}:2222"
@@ -34,4 +37,5 @@ services:
 volumes:
   python_graphql_lambda_venv: {}
   pnpm_store: {}
+  app_node_modules: {}
   postgres_data: {}{% endraw %}

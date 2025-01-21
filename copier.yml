@@ -33,6 +33,10 @@ pnpm_version:
     help: What version of pnpm is used for development?
     default: 9.15.4
 
+app_name:
+    type: str
+    help: What is the name of the application?
+
 # Additional Settings
 _min_copier_version: "9.4"
 
