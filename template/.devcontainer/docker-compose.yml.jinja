@@ -16,9 +16,9 @@ services:
     ports:
       - "{% endraw %}{{ ssh_port_number }}{% raw %}:2222"
     environment:
-      - AWS_PROFILE=localstack{% endraw %}
+      - AWS_PROFILE=localstack
 
 
 volumes:
   python_graphql_lambda_venv: {}
-  pnpm_store: {}
+  pnpm_store: {}{% endraw %}
