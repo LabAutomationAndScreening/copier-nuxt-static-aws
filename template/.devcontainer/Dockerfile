@@ -9,24 +9,25 @@ RUN apt-get update -y && apt-get install -y \
 
 # Create the venv folder and set permissions for anyone to modify---this is necessary to be able to break out the venv folder as a separate docker volume for better performance on Windows hosts
 ARG REPO_NAME=copier-base-template
-ENV VENV_PATH=/workspaces/${REPO_NAME}/graphql_lambda/.venv
-RUN mkdir -p /workspace && \
+ENV GRAPHQL_LAMBDA_PROJECT_PATH=/workspaces/${REPO_NAME}/graphql_lambda
+ENV VENV_PATH=${GRAPHQL_LAMBDA_PROJECT_PATH}/.venv
+RUN mkdir -p /workspaces && \
     mkdir -p ${VENV_PATH} && \
-    chmod -R 777 /workspaces ${VENV_PATH} && \
-    chgrp -R 0 /workspaces ${VENV_PATH}
+    chmod -R 777 /workspaces ${GRAPHQL_LAMBDA_PROJECT_PATH} ${VENV_PATH} && \
+    chgrp -R 0 /workspaces ${GRAPHQL_LAMBDA_PROJECT_PATH} ${VENV_PATH}
 
 ENV PNPM_STORE_PATH=/workspaces/${REPO_NAME}/.pnpm-store
-RUN mkdir -p /workspace && \
+RUN mkdir -p /workspaces && \
     mkdir -p ${PNPM_STORE_PATH} && \
     chmod -R 777 /workspaces ${PNPM_STORE_PATH} && \
     chgrp -R 0 /workspaces ${PNPM_STORE_PATH}
 
 ARG APP_NAME=default
-ENV APP_NODE_MODULES_PATH=/workspaces/${REPO_NAME}/${APP_NAME}_app/node_modules
-RUN mkdir -p /workspace && \
-    mkdir -p ${APP_NODE_MODULES_PATH} && \
-    chmod -R 777 /workspaces ${APP_NODE_MODULES_PATH} && \
-    chgrp -R 0 /workspaces ${APP_NODE_MODULES_PATH}
+ENV APP_PROJECT_PATH=/workspaces/${REPO_NAME}/${APP_NAME}_app
+ENV APP_NODE_MODULES_PATH=${APP_PROJECT_PATH}/node_modules
+RUN mkdir -p ${APP_NODE_MODULES_PATH} && \
+    chmod -R 777 ${APP_PROJECT_PATH} ${APP_NODE_MODULES_PATH} && \
+    chgrp -R 0 ${APP_PROJECT_PATH} ${APP_NODE_MODULES_PATH}
 
 # SSH
 EXPOSE 2222

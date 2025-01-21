@@ -22,7 +22,7 @@ services:
       - AWS_PROFILE=localstack
 
   postgres:
-    image: postgres:16.4-bookworm # bookworm appears to match the default tag. no known reason we are specifically using bookworm though https://hub.docker.com/_/postgres/tags?name=16.4
+    image: postgres:16.4-bookworm # bookworm appears to match the default tag. no known reason we are specifically using bookworm though, just pinning it for best practice
     container_name: postgres_db
     restart: always
     environment:
