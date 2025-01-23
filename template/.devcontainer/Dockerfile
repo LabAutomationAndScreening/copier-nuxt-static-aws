@@ -16,6 +16,12 @@ RUN mkdir -p /workspaces && \
     chmod -R 777 /workspaces ${GRAPHQL_LAMBDA_PROJECT_PATH} ${VENV_PATH} && \
     chgrp -R 0 /workspaces ${GRAPHQL_LAMBDA_PROJECT_PATH} ${VENV_PATH}
 
+ENV INFRA_PROJECT_PATH=/workspaces/${REPO_NAME}/infrastructure
+ENV VENV_PATH=${INFRA_PROJECT_PATH}/.venv
+RUN mkdir -p ${VENV_PATH} && \
+    chmod -R 777 ${INFRA_PROJECT_PATH} ${VENV_PATH} && \
+    chgrp -R 0 ${INFRA_PROJECT_PATH} ${VENV_PATH}
+
 ENV PNPM_STORE_PATH=/workspaces/${REPO_NAME}/.pnpm-store
 RUN mkdir -p /workspaces && \
     mkdir -p ${PNPM_STORE_PATH} && \
