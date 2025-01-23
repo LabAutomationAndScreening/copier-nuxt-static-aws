@@ -25,7 +25,11 @@ PROJECT_ROOT_DIR="$(realpath "$SCRIPT_DIR/..")"
 # Ensure that the lock file is in a good state
 if [ "$skip_lock" = "false" ]; then
     uv lock --check --directory "$PROJECT_ROOT_DIR"/graphql_lambda
+    uv lock --check --directory "$PROJECT_ROOT_DIR"/infrastructure
 fi
 
 uv sync $( [ "$skip_lock" = "false" ] && echo "--frozen" ) --directory "$PROJECT_ROOT_DIR"/graphql_lambda
-uv pip list --directory "$PROJECT_ROOT_DIR"/graphql_lambda{% endraw %}
+uv pip list --directory "$PROJECT_ROOT_DIR"/graphql_lambda
+
+uv sync $( [ "$skip_lock" = "false" ] && echo "--frozen" ) --directory "$PROJECT_ROOT_DIR"/infrastructure
+uv pip list --directory "$PROJECT_ROOT_DIR"/infrastructure{% endraw %}

@@ -18,7 +18,7 @@ repos:
       language: system
       pass_filenames: false
       verbose: true
-      files: '^pyproject.toml$|^uv.lock$'
+      files: '^graphql_lambda/pyproject.toml$|^graphql_lambda/uv.lock$'
 
     - id: sync-dependencies-on-commit-graphql-lambda
       name: ensure graphql-lambda python dependencies are up to date during commits
@@ -28,13 +28,41 @@ repos:
       # don't pass filenames else the command line sees them twice
       pass_filenames: false
       language: system
-      files: 'uv.lock$'
+      files: '^graphql_lambda/uv.lock$'
       verbose: true
 
     - id: sync-dependencies-post-checkout-graphql-lambda
       name: ensure graphql-lambda python dependencies are up to date during checkouts
       stages: [post-checkout]
       entry: bash -c 'uv sync --frozen --directory=./graphql_lambda'
+      pass_filenames: false
+      language: system
+      always_run: true
+      verbose: true
+
+    - id: uv-check-infrastructure
+      name: check infrastructure pyproject.toml for valid uv config
+      entry: bash -c 'uv lock --check --directory=./infrastructure'
+      language: system
+      pass_filenames: false
+      verbose: true
+      files: '^infrastructure/pyproject.toml$|^infrastructure/uv.lock$'
+
+    - id: sync-dependencies-on-commit-infrastructure
+      name: ensure infrastructure python dependencies are up to date during commits
+      stages: [pre-commit]
+       # When the install does change things, it exits 0, so needed to check for the phrase 'operations' in stdout in order to cause things pre-commit command to fail
+      entry: python -c "import subprocess,sys; results=subprocess.run(['uv', 'sync', '--frozen', '--directory=./infrastructure'],timeout=360,capture_output=True); print ('stdout- ' + results.stdout.decode('utf-8', 'strict')); print ('stderr- ' + results.stderr.decode('utf-8', 'strict')); sys.exit(int(results.returncode or int('Installed' in results.stdout.decode('utf-8', 'strict'))));"
+      # don't pass filenames else the command line sees them twice
+      pass_filenames: false
+      language: system
+      files: '^infrastructure/uv.lock$'
+      verbose: true
+
+    - id: sync-dependencies-post-checkout-infrastructure
+      name: ensure infrastructure python dependencies are up to date during checkouts
+      stages: [post-checkout]
+      entry: bash -c 'uv sync --frozen --directory=./infrastructure'
       pass_filenames: false
       language: system
       always_run: true
@@ -189,6 +217,19 @@ repos:
         name: pyright-graphql-lambda
         entry: bash -c "uv run pyright --directory=./graphql_lambda"
         files: 'graphql_lambda/.+\.py$'
+        # don't pass filenames else the command line sees them twice
+        pass_filenames: false
+        language: system
+        types: [python]
+        # use require_serial so that script is only called once per commit
+        require_serial: true
+        # print the number of files as a sanity-check
+        verbose: true
+
+    -   id: pyright-infrastructure
+        name: pyright-infrastructure
+        entry: bash -c "uv run pyright --directory=./infrastructure"
+        files: 'infrastructure/.+\.py$'
         # don't pass filenames else the command line sees them twice
         pass_filenames: false
         language: system
