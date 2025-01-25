@@ -10,7 +10,7 @@ services:
     volumes:
       - ..:/workspaces/{% endraw %}{{ repo_name }}{% raw %}:cached
       # Break out the venv folder as a separate docker volume for better performance on Windows hosts
-      - python_graphql_lambda_venv:/workspaces/{% endraw %}{{ repo_name }}{% raw %}/graphql_lambda/.venv
+{% endraw %}{% if has_backend %}{% raw %}      - python_graphql_lambda_venv:/workspaces/{% endraw %}{{ repo_name }}{% raw %}/graphql_lambda/.venv{% endraw %}{% endif %}{% raw %}
       - python_infrastructure_venv:/workspaces/{% endraw %}{{ repo_name }}{% raw %}/infrastructure/.venv
       # Break out the pnpm store folder as a separate docker volume for better performance on Windows hosts
       - pnpm_store:/workspaces/{% endraw %}{{ repo_name }}{% raw %}/.pnpm-store
@@ -21,7 +21,7 @@ services:
       - "{% endraw %}{{ ssh_port_number }}{% raw %}:2222"
     environment:
       - AWS_PROFILE=localstack
-
+{% endraw %}{% if has_backend %}{% raw %}
   postgres:
     image: postgres:16.4-bookworm # bookworm appears to match the default tag. no known reason we are specifically using bookworm though, just pinning it for best practice
     container_name: postgres_db
@@ -33,11 +33,11 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data{% endraw %}{% endif %}{% raw %}
 
 volumes:
-  python_graphql_lambda_venv: {}
+{% endraw %}{% if has_backend %}{% raw %}  python_graphql_lambda_venv: {}
+  postgres_data: {}{% endraw %}{% endif %}{% raw %}
   python_infrastructure_venv: {}
   pnpm_store: {}
-  app_node_modules: {}
-  postgres_data: {}{% endraw %}
+  app_node_modules: {}{% endraw %}

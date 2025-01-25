@@ -8,3 +8,4 @@ use_windows_in_ci: false
 node_version: 22.13.0
 pnpm_version: 9.15.4
 app_name: my_app
+has_backend: true

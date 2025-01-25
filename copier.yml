@@ -33,6 +33,11 @@ pnpm_version:
     help: What version of pnpm is used for development?
     default: 9.15.4
 
+has_backend:
+    type: bool
+    help: Does this project have a backend?
+    default: yes
+
 app_name:
     type: str
     help: What is the name of the application?

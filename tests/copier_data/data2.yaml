@@ -8,3 +8,4 @@ use_windows_in_ci: true
 node_version: 22.13.0
 pnpm_version: 9.15.4
 app_name: foobar
+has_backend: false
