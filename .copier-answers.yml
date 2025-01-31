@@ -1,5 +1,5 @@
 # Changes here will be overwritten by Copier
-_commit: v0.0.5-8-g8aec1d4
+_commit: v0.0.5-12-g25b86f0
 _src_path: gh:LabAutomationAndScreening/copier-base-template.git
 description: Template for creating a Static Website using Nuxt frontend hosted on
     AWS
