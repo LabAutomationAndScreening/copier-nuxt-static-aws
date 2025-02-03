@@ -46,7 +46,7 @@ jobs:
       - name: Run pre-commit
         run:  pre-commit run -a
 
-  plan-to-staging:
+{% endraw %}{% if use_staging_environment %}{% raw %}  plan-to-staging:
     needs: [ lint ]
     steps:
       - name: P
@@ -54,16 +54,16 @@ jobs:
         with:
           project-dir: ./infrastructure/
           stack-name: staging
-          aws-account-id: {% endraw %}{{ aws_staging_account_id }}{% raw %}
+          aws-account-id: {% endraw %}{{ aws_staging_account_id }}{% raw %}{% endraw %}{% endif %}{% raw %}
 
 
 
   required-check:
     runs-on: {% endraw %}{{ gha_linux_runner }}{% raw %}
-    needs: [ test, plan-to-staging ]
+    needs: [ test{% endraw %}{% if use_staging_environment %}{% raw %}, plan-to-staging{% endraw %}{% endif %}{% raw %} ]
     if: always()
     steps:
       - name: fail if prior job failure
-        if: needs.test.result != 'success' needs.plan-to-staging.result != 'success'
+        if: needs.test.result != 'success'{% endraw %}{% if use_staging_environment %}{% raw %} || needs.plan-to-staging.result != 'success'{% endraw %}{% endif %}{% raw %}
         run: |
           exit 1{% endraw %}
