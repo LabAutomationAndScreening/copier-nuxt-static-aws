@@ -1,0 +1,27 @@
+{% raw %}[project]
+name = "graphql-lambda"
+version = "0.1.0"
+description = "API to run GraphQL queries on AWS Lambda"
+
+readme = "README.md"
+requires-python = ">={% endraw %}{{ python_version }}{% raw %}"
+
+dependencies = [
+
+]
+
+
+[dependency-groups]
+dev = [
+    # Specific to this template
+
+
+    # Managed by upstream template
+    "pyright>={% endraw %}{{ pyright_version }}{% raw %}",
+    "pytest>={% endraw %}{{ pytest_version }}{% raw %}",
+    "pytest-cov>={% endraw %}{{ pytest_cov_version }}{% raw %}",
+    "pytest-randomly>={% endraw %}{{ pytest_randomly_version }}{% raw %}",
+]
+
+[tool.uv]
+package = true{% endraw %}
