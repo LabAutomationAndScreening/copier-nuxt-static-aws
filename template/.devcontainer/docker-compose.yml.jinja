@@ -1,11 +1,9 @@
-{% raw %}version: '3.8'
-services:
+{% raw %}services:
   devcontainer:
     build:
       context: .
       args:
         REPO_NAME: {% endraw %}{{ repo_name }}{% raw %}
-        APP_NAME: {% endraw %}{{ app_name }}{% raw %}
     # You can run `devcontainer-info content-url` in codespaces to see what image base is
     volumes:
       - ..:/workspaces/{% endraw %}{{ repo_name }}{% raw %}:cached
@@ -15,12 +13,12 @@ services:
       # Break out the pnpm store folder as a separate docker volume for better performance on Windows hosts
       - pnpm_store:/workspaces/{% endraw %}{{ repo_name }}{% raw %}/.pnpm-store
       # And node_modules
-      - app_node_modules:/workspaces/{% endraw %}{{ repo_name }}{% raw %}/{% endraw %}{{ app_name }}{% raw %}_app/node_modules
-    command: sleep infinity
+      - app_node_modules:/workspaces/{% endraw %}{{ repo_name }}{% raw %}/{% endraw %}{{ app_name }}{% raw %}_app/node_modules    command: sleep infinity
     ports:
       - "{% endraw %}{{ ssh_port_number }}{% raw %}:2222"
     environment:
       - AWS_PROFILE=localstack
+      - AWS_DEFAULT_REGION={% endraw %}{{ aws_region_for_stack if (aws_region_for_stack is defined and aws_region_for_stack != "") else "us-east-1" }}{% raw %}
 {% endraw %}{% if has_backend %}{% raw %}
   postgres:
     image: postgres:16.4-bookworm # bookworm appears to match the default tag. no known reason we are specifically using bookworm though, just pinning it for best practice
