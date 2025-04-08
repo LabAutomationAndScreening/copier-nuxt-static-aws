@@ -3,28 +3,80 @@ repo_name:
     type: str
     help: What is the name of the repository?
 
+repo_org_name:
+    type: str
+    help: What's the organization or username that owns this repository (look in the URL)?
+
 description:
     type: str
     help: What is the description of this repository?
 
+is_open_source:
+    type: bool
+    help: Is this library open source?
+    default: no
+
 ssh_port_number:
     type: int
     help: What port should the devcontainer bind SSH to?
-    default: "{{ range(49152, 65536) | random }}"
+    # Pick a random port, but ensure it's not in the excluded port range on Windows (powershell: `netsh int ipv4 show excludedportrange protocol=tcp`)
+    default: "{{ ([p for p in range(49152, 65536) if not (49752 <= p <= 49851 or 50000 <= p <= 50059 or 50060 <= p <= 50159 or 50160 <= p <= 50259 or 50260 <= p <= 50359 or 50914 <= p <= 51013 or 51114 <= p <= 51213 or 51214 <= p <= 51313 or 51314 <= p <= 51413 or 51623 <= p <= 51722 or 51723 <= p <= 51822 or 65269 <= p <= 65368 or 65369 <= p <= 65468))] | random }}"
 
 use_windows_in_ci:
     type: bool
     help: Should CI in the instantiated template also use Windows runners?
     default: no
 
+node_version:
+    type: str
+    help: What version of NodeJS is used for development?
+    default: 22.14.0
+
+pnpm_version:
+    type: str
+    help: What version of pnpm is used for development?
+    default: 10.6.3
+
+
+
 python_version:
     type: str
     help: What version of Python is used for development?
     default: "3.12.7"
 
+python_package_registry:
+    type: str
+    help: What registry should Python Packgaes be installed from?
+    choices:
+        - PyPI
+        - AWS CodeArtifact
+    default: PyPI
+
+
 aws_identity_center_id:
     type: str
     help: What's the ID of your Organization's AWS Identity center, e.g. d-9145c20053?
+    when: "{{ python_package_registry == 'AWS CodeArtifact' or True }}"
+
+aws_org_home_region:
+    type: str
+    help: What is the home region of the AWS Organization (where all of the central infrastructure is deployed)?
+    default: us-east-1
+    when: "{{ python_package_registry == 'AWS CodeArtifact' or True }}"
+
+aws_central_infrastructure_account_id:
+    type: str
+    help: What's the ID of your Organization's AWS Account containing Central Infrastructure (e.g. CodeArtifact)?
+    when: "{{ python_package_registry == 'AWS CodeArtifact' }}"
+
+core_infra_base_access_profile_name:
+    type: str
+    help: What's the AWS Identity Center Profile name for base access to the Central Infrastructure account (i.e. to read from CodeArtifact)?
+    when: "{{ python_package_registry == 'AWS CodeArtifact' }}"
+    default: CoreInfraBaseAccess
+
+
+
 
 aws_production_account_id:
     type: str
@@ -49,20 +101,16 @@ aws_development_account_id:
     type: str
     help: What's the AWS Account ID for local development (often the same as the ephemeral test environment)?
     when: "{{ use_staging_environment }}"
+    default: "{{ aws_test_account_id }}"
+
+aws_region_for_stack:
+    type: str
+    help: What AWS region should be used for this workload?
+    default: "{{ aws_org_home_region }}"
 
 
 
 # Questions specific to this template
-node_version:
-    type: str
-    help: What version of NodeJS is used for development?
-    default: 22.13.0
-
-pnpm_version:
-    type: str
-    help: What version of pnpm is used for development?
-    default: 9.15.4
-
 has_backend:
     type: bool
     help: Does this project have a backend?

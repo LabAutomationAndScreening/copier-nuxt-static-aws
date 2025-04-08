@@ -1,16 +1,21 @@
 # Data managed by upstream template
 repo_name: the_best_repo
+repo_org_name: great-company
+is_open_source: true
 description: Doing amazing things
 ssh_port_number: 12345
 use_windows_in_ci: false
 
-aws_identity_center_id: d-9145c20053
-aws_production_account_id: 123456789012
-use_staging_environment: false
 
-
-# Data added based on the specifics of this template
 node_version: 22.13.0
 pnpm_version: 9.15.4
+
+python_package_registry: PyPI
+aws_identity_center_id: d-9145c20053
+aws_org_home_region: us-west-2
+aws_production_account_id: 123456789012
+use_staging_environment: false
+aws_region_for_stack: us-east-2
+# Data added based on the specifics of this template
 app_name: my_app
 has_backend: true
