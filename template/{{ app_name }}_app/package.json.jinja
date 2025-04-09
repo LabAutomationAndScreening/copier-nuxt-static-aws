@@ -1,0 +1,46 @@
+{% raw %}{
+  "name": "nuxt-app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "type-check": "vue-tsc --noEmit",
+    "lint": "eslint . --fix --ext .vue,.ts,.js",
+    "build": "pnpm run type-check && nuxt build",
+    "comment-about-dev-no-fork": "sometimes it seems needed, other times it seems to work with it...more info https://github.com/nuxt/cli/issues/181",
+    "dev": "nuxt dev --no-fork",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare && pnpm exec playwright-core install --only-shell chromium-headless-shell",
+    "test-unit": "vitest --dir tests/unit run --coverage",
+    "test-unit:watch": "vitest --dir tests/unit",
+    "test-e2e": "vitest --dir tests/e2e run",
+    "test-e2e:docker": "docker compose --file=../docker-compose.yaml build && USE_DOCKER_COMPOSE_FOR_VITEST_E2E=1 vitest --dir tests/e2e run",
+    "test-e2e:watch": "vitest --dir tests/e2e"
+  },
+  "dependencies": {
+    "@nuxt/ui": "{% endraw %}{{ nuxt_ui_version }}{% raw %}",
+    "nuxt": "{% endraw %}{{ nuxt_version }}{% raw %}",
+    "typescript": "{% endraw %}{{ typescript_version }}{% raw %}",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@nuxt/eslint": "^1.2.0",
+    "@nuxt/schema": "^3.0.0",
+    "@nuxt/test-utils": "^3.17.2",
+    "@nuxtjs/eslint-config-typescript": "^12.1.0",
+    "@vitest/coverage-v8": "^3.0.9",
+    "@vue/devtools-api": "^7.7.2",
+    "@vue/test-utils": "^2.4.6",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^9.22.0",
+    "flush-promises": "^1.0.2",
+    "happy-dom": "^17.4.4",
+    "playwright-core": "^1.51.1",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^4.0.14",
+    "vitest": "^3.0.9",
+    "vue-eslint-parser": "^10.1.1",
+    "vue-tsc": "^2.2.8"
+  }
+}{% endraw %}
