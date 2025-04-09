@@ -1,18 +1,53 @@
 import logging
+import mimetypes
+import os
+from pathlib import Path
 
 import pulumi
 from ephemeral_pulumi_deploy import append_resource_suffix
 from ephemeral_pulumi_deploy import common_tags_native
 from ephemeral_pulumi_deploy import get_aws_account_id
 from ephemeral_pulumi_deploy import get_config_str
+from ephemeral_pulumi_deploy.utils import PROTECTED_ENVS
+from pulumi import Output
 from pulumi import export
 from pulumi_aws.iam import GetPolicyDocumentStatementArgs
 from pulumi_aws.iam import GetPolicyDocumentStatementPrincipalArgs
 from pulumi_aws.iam import get_policy_document
+from pulumi_aws.s3 import BucketObjectv2
 from pulumi_aws_native import cloudfront
 from pulumi_aws_native import s3
 
+from .jinja_constants import APP_DOMAIN_NAME
+
 logger = logging.getLogger(__name__)
+
+repo_root = Path(__file__).parent.parent.parent.parent
+
+
+def _get_mime_type(file_path: Path) -> str:
+    content_type, _ = mimetypes.guess_type(file_path)
+    return content_type or "application/octet-stream"
+
+
+def _upload_assets_to_s3(*, bucket_id: Output[str], base_dir: Path) -> None:
+    for dirpath, _, filenames in os.walk(base_dir):
+        for filename in filenames:
+            file_path = Path(dirpath) / filename
+
+            # Compute the S3 key relative to the base directory.
+            # For example, if base_dir is "./upload-dir" and file_path is "./upload-dir/docs/readme.txt",
+            # then s3_key will be "docs/readme.txt".
+            s3_key = os.path.relpath(file_path, base_dir)
+            # Since resource names cannot have slashes, we replace them with dashes.
+            resource_name = append_resource_suffix(s3_key.replace(os.sep, "-"), max_length=200)
+            _ = BucketObjectv2(
+                resource_name,
+                content_type=_get_mime_type(file_path),
+                bucket=bucket_id,
+                key=s3_key,
+                source=pulumi.FileAsset(str(file_path)),
+            )
 
 
 def pulumi_program() -> None:
@@ -24,7 +59,7 @@ def pulumi_program() -> None:
     export("env", env)
 
     # Create Resources Here
-    bucket_name = f"{pulumi.get_stack()}.app.biotasker.com"
+    bucket_name = APP_DOMAIN_NAME if env == "prod" else f"{pulumi.get_stack()}.{APP_DOMAIN_NAME}"
     app_website_bucket = s3.Bucket(
         bucket_name,
         bucket_name=bucket_name,
@@ -46,7 +81,7 @@ def pulumi_program() -> None:
                         principals=[
                             GetPolicyDocumentStatementPrincipalArgs(
                                 type="*",
-                                identifiers=["*"],  # Allows all principals
+                                identifiers=["*"],
                             )
                         ],
                         actions=["s3:GetObject"],
@@ -56,42 +91,46 @@ def pulumi_program() -> None:
             ).json,
         )
     )
-    origin_id = "S3OriginMyBucket"
-    app_cloudfront = app_website_bucket.website_url.apply(
-        lambda full_url: cloudfront.Distribution(
-            append_resource_suffix("app"),
-            distribution_config=cloudfront.DistributionConfigArgs(
-                price_class="PriceClass_100",
-                origins=[
-                    cloudfront.DistributionOriginArgs(
-                        domain_name=full_url.removeprefix("http://"),
-                        id=origin_id,
-                        custom_origin_config=cloudfront.DistributionCustomOriginConfigArgs(
-                            http_port=80,
-                            https_port=443,
-                            origin_protocol_policy="http-only",
-                            origin_ssl_protocols=["TLSv1.2"],
+    _upload_assets_to_s3(bucket_id=app_website_bucket.id, base_dir=repo_root / "elifine_app" / ".output" / "public")
+    if env in PROTECTED_ENVS:
+        origin_id = "S3OriginMyBucket"
+        app_cloudfront = app_website_bucket.website_url.apply(
+            lambda full_url: cloudfront.Distribution(
+                append_resource_suffix("app"),
+                distribution_config=cloudfront.DistributionConfigArgs(
+                    price_class="PriceClass_100",
+                    origins=[
+                        cloudfront.DistributionOriginArgs(
+                            domain_name=full_url.removeprefix("http://"),
+                            id=origin_id,
+                            custom_origin_config=cloudfront.DistributionCustomOriginConfigArgs(
+                                http_port=80,
+                                https_port=443,
+                                origin_protocol_policy="http-only",
+                                origin_ssl_protocols=["TLSv1.2"],
+                            ),
+                        )
+                    ],
+                    default_cache_behavior=cloudfront.DistributionDefaultCacheBehaviorArgs(
+                        target_origin_id=origin_id,
+                        viewer_protocol_policy="redirect-to-https",
+                        allowed_methods=["GET", "HEAD"],
+                        cached_methods=["GET", "HEAD"],
+                        forwarded_values=cloudfront.DistributionForwardedValuesArgs(
+                            query_string=False, cookies=cloudfront.DistributionCookiesArgs(forward="none")
                         ),
-                    )
-                ],
-                default_cache_behavior=cloudfront.DistributionDefaultCacheBehaviorArgs(
-                    target_origin_id=origin_id,
-                    viewer_protocol_policy="redirect-to-https",
-                    allowed_methods=["GET", "HEAD"],
-                    cached_methods=["GET", "HEAD"],
-                    forwarded_values=cloudfront.DistributionForwardedValuesArgs(
-                        query_string=False, cookies=cloudfront.DistributionCookiesArgs(forward="none")
+                    ),
+                    enabled=True,
+                    ipv6_enabled=True,
+                    default_root_object="index.html",
+                    restrictions=cloudfront.DistributionRestrictionsArgs(
+                        geo_restriction=cloudfront.DistributionGeoRestrictionArgs(restriction_type="none")
+                    ),
+                    viewer_certificate=cloudfront.DistributionViewerCertificateArgs(
+                        cloud_front_default_certificate=True
                     ),
                 ),
-                enabled=True,
-                ipv6_enabled=True,
-                default_root_object="index.html",
-                restrictions=cloudfront.DistributionRestrictionsArgs(
-                    geo_restriction=cloudfront.DistributionGeoRestrictionArgs(restriction_type="none")
-                ),
-                viewer_certificate=cloudfront.DistributionViewerCertificateArgs(cloud_front_default_certificate=True),
-            ),
-            tags=common_tags_native(),
+                tags=common_tags_native(),
+            )
         )
-    )
-    export("app-cloudfront-domain-name", app_cloudfront.domain_name)
+        export("app-cloudfront-domain-name", app_cloudfront.domain_name)
