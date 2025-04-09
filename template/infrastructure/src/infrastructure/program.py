@@ -18,6 +18,7 @@ from pulumi_aws.s3 import BucketObjectv2
 from pulumi_aws_native import cloudfront
 from pulumi_aws_native import s3
 
+from .jinja_constants import APP_DIRECTORY_NAME
 from .jinja_constants import APP_DOMAIN_NAME
 
 logger = logging.getLogger(__name__)
@@ -91,7 +92,9 @@ def pulumi_program() -> None:
             ).json,
         )
     )
-    _upload_assets_to_s3(bucket_id=app_website_bucket.id, base_dir=repo_root / "elifine_app" / ".output" / "public")
+    _upload_assets_to_s3(
+        bucket_id=app_website_bucket.id, base_dir=repo_root / APP_DIRECTORY_NAME / ".output" / "public"
+    )
     if env in PROTECTED_ENVS:
         origin_id = "S3OriginMyBucket"
         app_cloudfront = app_website_bucket.website_url.apply(
