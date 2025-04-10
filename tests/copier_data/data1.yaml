@@ -19,3 +19,4 @@ aws_region_for_stack: us-east-2
 # Data added based on the specifics of this template
 app_name: my_app
 has_backend: true
+app_domain_name: myapp.great-company.com

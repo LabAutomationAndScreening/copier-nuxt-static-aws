@@ -120,6 +120,10 @@ app_name:
     type: str
     help: What is the name of the application?
 
+app_domain_name:
+    type: str
+    help: What is the domain name for the application (e.g. app.initech.com)?
+
 # Additional Settings
 _min_copier_version: "9.4"
 
