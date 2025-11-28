@@ -2,15 +2,19 @@
 [![Copier](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/copier-org/copier/master/img/badge/badge-black.json)](https://github.com/copier-org/copier)
 [![Actions status](https://www.github.com/LabAutomationAndScreening/copier-nuxt-static-aws/actions/workflows/ci.yaml/badge.svg?branch=main)](https://www.github.com/LabAutomationAndScreening/copier-nuxt-static-aws/actions)
 [![Open in Dev Containers](https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://www.github.com/LabAutomationAndScreening/copier-nuxt-static-aws)
-
+[![OpenIssues](https://isitmaintained.com/badge/open/LabAutomationAndScreening/copier-nuxt-static-aws.svg)](https://isitmaintained.com/project/LabAutomationAndScreening/copier-nuxt-static-aws)
 
 # Usage
 To create a new repository using this template:
-1. Install `copier` and `copier-templates-extensions`. An easy way to do that is to copy the `.devcontainer/install-ci-tooling.sh` script in this repository into your new repo and then run it.
-2. Run copier to instantiate the template: `copier copy --trust gh:LabAutomationAndScreening/copier-nuxt-static-aws.git`
-3. Run `uv lock` to generate the lock file
-4. Commit the changes
-5. Rebuild your new devcontainer
+1. Create a basic devcontainer either using the Codespaces default or using the file `.devcontainer/devcontainer-to-instantiate-template.json` from [the base template repo](https://github.com/LabAutomationAndScreening/copier-base-template/blob/main/.devcontainer/devcontainer-to-instantiate-template.json)
+1. Inside that devcontainer, run `python .devcontainer/install-ci-tooling.py` to install necessary tooling to instantiate the template (you can copy/paste the script from this repo...and you can paste it in the root of the repo if you want)
+1. Delete all files currently in the repository. Optional...but makes it easiest to avoid git conflicts.
+1. Run copier to instantiate the template: `copier copy --trust gh:LabAutomationAndScreening/copier-nuxt-static-aws.git .`
+1. Run `python .devcontainer/manual-setup-deps.py --only-create-lock --allow-uv-to-install-python` to generate the lock file(s)
+1. Stage all files to prepare for commit (`git add .`)
+1. Run `python3 .github/workflows/hash_git_files.py . --for-devcontainer-config-update` to update the hash for your devcontainer file
+1. Commit the changes (optional)
+1. Rebuild your new devcontainer
 
 
 

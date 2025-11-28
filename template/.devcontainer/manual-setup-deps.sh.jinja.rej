@@ -1,0 +1,17 @@
+diff a/template/.devcontainer/manual-setup-deps.sh.jinja b/template/.devcontainer/manual-setup-deps.sh.jinja	(rejected hunks)
+@@ -46,8 +46,12 @@ fi
+
+ # Ensure that the lock file is in a good state
+ if [ "$skip_lock" = "false" ]; then
+-    uv lock --check --directory "$PROJECT_ROOT_DIR"
++{% endraw %}{% if has_backend %}{% raw %}    uv lock --check --directory "$PROJECT_ROOT_DIR"/graphql_lambda{% endraw %}{% endif %}{% raw %}
++    uv lock --check --directory "$PROJECT_ROOT_DIR"/infrastructure
+ fi
+
+-uv sync $( [ "$skip_lock" = "false" ] && echo "--frozen" ) --directory "$PROJECT_ROOT_DIR"
+-uv pip list --directory "$PROJECT_ROOT_DIR"{% endraw %}
++{% endraw %}{% if has_backend %}{% raw %}uv sync $( [ "$skip_lock" = "false" ] && echo "--frozen" ) --directory "$PROJECT_ROOT_DIR"/graphql_lambda
++uv pip list --directory "$PROJECT_ROOT_DIR"/graphql_lambda{% endraw %}{% endif %}{% raw %}
++
++uv sync $( [ "$skip_lock" = "false" ] && echo "--frozen" ) --directory "$PROJECT_ROOT_DIR"/infrastructure
++uv pip list --directory "$PROJECT_ROOT_DIR"/infrastructure{% endraw %}
