@@ -3,12 +3,13 @@
   "service": "devcontainer",
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
   "features": {
-    "ghcr.io/devcontainers/features/aws-cli:1": {
+    "ghcr.io/devcontainers/features/aws-cli:1.1.2": {
+      // https://github.com/devcontainers/features/blob/main/src/aws-cli/devcontainer-feature.json
       // view latest version https://raw.githubusercontent.com/aws/aws-cli/v2/CHANGELOG.rst
-      "version": "2.24.24"
+      "version": "2.31.11"
     },
-    "ghcr.io/devcontainers/features/python:1": {
-      // https://github.com/devcontainers/features/tree/main/src/python
+    "ghcr.io/devcontainers/features/python:1.7.1": {
+      // https://github.com/devcontainers/features/blob/main/src/python/devcontainer-feature.json
       "version": "3.12.7",
       "installTools": false,
       "optimize": true
@@ -19,22 +20,21 @@
       // Add the IDs of extensions you want installed when the container is created.
       "extensions": [
         // basic tooling
-        "eamodio.gitlens@15.5.1",
-        "ms-vscode.live-server@0.5.2024091601",
+        // "eamodio.gitlens@15.5.1",
+        "coderabbit.coderabbit-vscode@0.16.0",
+        "ms-vscode.live-server@0.5.2025051301",
         "MS-vsliveshare.vsliveshare@1.0.5905",
-        "github.copilot@1.234.0",
-        "github.copilot-chat@0.20.2",
+        "github.copilot@1.388.0",
+        "github.copilot-chat@0.34.2025112401",
 
         // Python
-        "ms-python.python@2024.14.1",
-        "ms-python.vscode-pylance@2024.9.2",
-        "ms-vscode-remote.remote-containers@0.383.0",
-        "charliermarsh.ruff@2024.54.0",
-
-
+        "ms-python.python@2025.17.2025100201",
+        "ms-python.vscode-pylance@2025.8.3",
+        "ms-vscode-remote.remote-containers@0.414.0",
+        "charliermarsh.ruff@2025.28.0",
 
         // Misc file formats
-        "bierner.markdown-mermaid@1.25.0",
+        "bierner.markdown-mermaid@1.28.0",
         "samuelcolvin.jinjahtml@0.20.0",
         "tamasfe.even-better-toml@0.19.2",
         "emilast.LogFileHighlighter@3.3.3",
@@ -44,6 +44,8 @@
         "editor.accessibilitySupport": "off", // turn off sounds
         "extensions.autoUpdate": false,
         "extensions.autoCheckUpdates": false,
+        "livePreview.portNumber": 3025, // arbitrary not to conflict with default 3000 Nuxt port number
+        "github.copilot.nextEditSuggestions.allowWhitespaceOnlyChanges": false,
         "[python]": {
           "editor.formatOnSave": true,
           "editor.defaultFormatter": "charliermarsh.ruff"
@@ -51,7 +53,7 @@
         "ruff.nativeServer": "on",
         // TODO: see if there's a way to specify different configurations for different folders
         "ruff.configuration": "/workspaces/copier-nuxt-static-aws/ruff-test.toml", // use the test configuration since it's less restrictive and won't show false positives and underline things
-        "[jsonc][json][javascript][typescript][graphql]": {
+        "[jsonc][json][javascript][typescript][graphql][css][scss][html][vue]": {
           "editor.defaultFormatter": "esbenp.prettier-vscode",
           "editor.formatOnSave": true
         }
@@ -61,4 +63,5 @@
   "initializeCommand": "sh .devcontainer/initialize-command.sh",
   "onCreateCommand": "sh .devcontainer/on-create-command.sh",
   "postStartCommand": "sh .devcontainer/post-start-command.sh"
+  // Devcontainer context hash (do not manually edit this, it's managed by a pre-commit hook): cd20c8b7 # spellchecker:disable-line
 }
