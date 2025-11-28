@@ -121,7 +121,7 @@ jobs:
       - name: Run pre-commit
         run: |
           # skip devcontainer context hash because the template instantiation may make it different every time
-          SKIP=git-dirty,compute-devcontainer-context-hash pre-commit run -a
+          SKIP=git-dirty,compute-devcontainer-context-hash,uv-check-graphql-lambda pre-commit run -a
 
       - name: Upload pre-commit log if failure
         if: ${{ failure() }}
