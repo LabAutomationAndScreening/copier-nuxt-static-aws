@@ -14,27 +14,6 @@ export default defineNuxtConfig({
     ["@nuxt/eslint", { devOnly: true }],
     ["@nuxt/test-utils/module", { devOnly: true }],
   ],
-  icon: {
-    provider: "none", // bundle all icons into the build for air-gapped deployments
-    clientBundle: {
-      scan: true,
-      icons: [
-        "lucide:check", // the way @nuxt/ui creates checkboxes, the check mark doesn't seem to be picked up by scanning.
-        "lucide:chevron-down", // the way @nuxt/ui creates accordions, the chevron-down doesn't seem to be picked up by scanning.
-        "lucide:x", // UInputTags needs lucide:x
-        "lucide:plus", // and UInputNumber needs lucide:plus and lucide:minus
-        "lucide:minus", // and UInputNumber needs lucide:plus and lucide:minus
-        "lucide:arrow-up-right", // the way @nuxt/ui creates Navigation Menu links that open in new windows it uses this icon
-        "lucide:arrow-up-down", // this is used for sortable table headers and it looks like `scan` doesn't pick it up from the .ts file
-        "lucide:arrow-up-narrow-wide", // this is used for sortable table headers and it looks like `scan` doesn't pick it up from the .ts file
-        "lucide:arrow-down-wide-narrow", // this is used for sortable table headers and it looks like `scan` doesn't pick it up from the .ts file
-        "lucide:moon", // UColorModeSwitch needs lucide:moon and lucide:sun
-        "lucide:sun", // UColorModeSwitch needs lucide:moon and lucide:sun
-        "lucide:menu", // UDashboard needs lucide:menu
-      ],
-      sizeLimitKb: 256, // fail the build if there's somehow more than this amount of icons
-    },
-  },
   css: ["~/assets/css/main.css"],
   experimental: { appManifest: false }, // https://github.com/nuxt/nuxt/issues/30461#issuecomment-2572616714
   nitro: {
