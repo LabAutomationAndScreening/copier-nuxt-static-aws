@@ -2,45 +2,68 @@
   "name": "nuxt-app",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@{% endraw %}{{ pnpm_version }}{% raw %}",
   "scripts": {
     "type-check": "vue-tsc --noEmit",
     "lint": "eslint . --fix --ext .vue,.ts,.js",
-    "build": "pnpm run type-check && nuxt build",
+    "build": "nuxt build",
     "comment-about-dev-no-fork": "sometimes it seems needed, other times it seems to work with it...more info https://github.com/nuxt/cli/issues/181",
-    "dev": "nuxt dev --no-fork",
+    "dev": "nuxt dev --no-fork",{% endraw %}{% if has_backend %}{% raw %}
+    "openapi-codegen": "mkdir -p ./app/generated/open-api/backend && docker run --network host --user $(id -u):$(id -g) -v ./app/generated/open-api/backend:/app/output -v $PWD/../backend/tests/unit/__snapshots__/test_basic_server_functionality/test_openapi_schema.json:/app/openapi.json mcr.microsoft.com/openapi/kiota:{% endraw %}{{ kiota_cli_version }}{% raw %} generate -l typescript -c BackendClient -n client -d openapi.json --exclude-backward-compatible --clean-output --additional-data false && python3 ./kiota_nullable_fixer.py",{% endraw %}{% endif %}{% raw %}
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare && pnpm exec playwright-core install --only-shell chromium-headless-shell",
-    "test-unit": "vitest --dir tests/unit run --coverage",
-    "test-unit:watch": "vitest --dir tests/unit",
-    "test-e2e": "vitest --dir tests/e2e run",
-    "test-e2e:docker": "docker compose --file=../docker-compose.yaml build && USE_DOCKER_COMPOSE_FOR_VITEST_E2E=1 vitest --dir tests/e2e run",
-    "test-e2e:watch": "vitest --dir tests/e2e"
+    "test-unit": "vitest --exclude=\"tests/e2e/**\" --exclude=\"tests/compiled/**\" --run --coverage",
+    "test-unit:watch": "vitest --exclude=\"tests/e2e/**\" --exclude=\"tests/compiled/**\"",
+    "test-compiled": "vitest --exclude=\"tests/e2e/**\" --exclude=\"tests/unit/**\" --test-timeout=15000 --run",
+    "test-e2e": "docker compose --file=../docker-compose.yaml build && dotenv -v USE_DOCKER_COMPOSE_FOR_VITEST_E2E=1 -- vitest --exclude=\"tests/unit/**\" --exclude=\"tests/compiled/**\" --test-timeout=15000 --run",
+    "test-compiled:watch": "vitest --exclude=\"tests/e2e/**\" --exclude=\"tests/unit/**\" --test-timeout=15000"
   },
   "dependencies": {
+    "@iconify-json/lucide": "{% endraw %}{{ iconify_json_lucide_version }}{% raw %}",
+    "@iconify/vue": "{% endraw %}{{ iconify_vue_version }}{% raw %}",
+    "@nuxt/fonts": "{% endraw %}{{ nuxt_fonts_version }}{% raw %}",
+    "@nuxt/icon": "{% endraw %}{{ nuxt_icon_version }}{% raw %}",
     "@nuxt/ui": "{% endraw %}{{ nuxt_ui_version }}{% raw %}",
+    "@nuxtjs/color-mode": "{% endraw %}{{ nuxtjs_color_mode_version }}{% raw %}",
     "nuxt": "{% endraw %}{{ nuxt_version }}{% raw %}",
-    "typescript": "{% endraw %}{{ typescript_version }}{% raw %}",
-    "vue": "^3.5.13",
-    "vue-router": "^4.5.0"
+    "vue": "{% endraw %}{{ vue_version }}{% raw %}",
+    "vue-router": "{% endraw %}{{ vue_router_version }}{% raw %}"
   },
   "devDependencies": {
-    "@nuxt/eslint": "^1.2.0",
-    "@nuxt/schema": "^3.0.0",
-    "@nuxt/test-utils": "^3.17.2",
+    "@faker-js/faker": "{% endraw %}{{ faker_version }}{% raw %}",{% endraw %}{% if frontend_uses_graphql %}{% raw %}
+    "@graphql-codegen/cli": "{% endraw %}{{ graphql_codegen_cli_version }}{% raw %}",
+    "@graphql-codegen/typescript": "{% endraw %}{{ graphql_codegen_typescript_version }}{% raw %}",
+    "@graphql-codegen/typescript-operations": "{% endraw %}{{ graphql_codegen_typescript_operations_version }}{% raw %}",
+    "@graphql-codegen/typescript-vue-apollo": "^4.1.2",
+    "@graphql-tools/mock": "^9.0.22",
+    "@graphql-tools/schema": "^10.0.23",{% endraw %}{% endif %}{% raw %}
+    "@nuxt/eslint": "{% endraw %}{{ nuxt_eslint_version }}{% raw %}",
+    "@nuxt/schema": "{% endraw %}{{ nuxt_version }}{% raw %}",
+    "@nuxt/test-utils": "{% endraw %}{{ nuxt_test_utils_version }}{% raw %}",{% endraw %}{% if frontend_uses_graphql %}{% raw %}
+    "@nuxtjs/apollo": "{% endraw %}{{ nuxt_apollo_version }}{% raw %}",{% endraw %}{% endif %}{% raw %}
     "@nuxtjs/eslint-config-typescript": "^12.1.0",
-    "@vitest/coverage-v8": "^3.0.9",
-    "@vue/devtools-api": "^7.7.2",
-    "@vue/test-utils": "^2.4.6",
+    "@playwright/test": "{% endraw %}{{ playwright_version }}{% raw %}",
+    "@types/node": "{% endraw %}{{ types_node_version }}{% raw %}",
+    "@vitest/coverage-istanbul": "{% endraw %}{{ vitest_version }}{% raw %}",{% endraw %}{% if frontend_uses_graphql %}{% raw %}
+    "@vue/apollo-composable": "^4.2.2",{% endraw %}{% endif %}{% raw %}
+    "@vue/devtools-api": "{% endraw %}{{ vue_devtools_api_version }}{% raw %}",
+    "@vue/test-utils": "{% endraw %}{{ vue_test_utils_version }}{% raw %}",
     "autoprefixer": "^10.4.21",
-    "eslint": "^9.22.0",
-    "flush-promises": "^1.0.2",
-    "happy-dom": "^17.4.4",
-    "playwright-core": "^1.51.1",
+    "dotenv-cli": "{% endraw %}{{ dotenv_cli_version }}{% raw %}",
+    "eslint": "{% endraw %}{{ eslint_version }}{% raw %}",
+    "eslint-plugin-vitest": "^0.5.4",{% endraw %}{% if frontend_uses_graphql %}{% raw %}
+    "graphql": "^16.12.0",
+    "graphql-tag": "^2.12.6",{% endraw %}{% endif %}{% raw %}
+    "happy-dom": "{% endraw %}{{ happy_dom_version }}{% raw %}",{% endraw %}{% if frontend_uses_graphql %}{% raw %}
+    "mock-apollo-client": "^1.4.0",{% endraw %}{% endif %}{% raw %}
+    "playwright": "{% endraw %}{{ playwright_version }}{% raw %}",
+    "playwright-core": "{% endraw %}{{ playwright_version }}{% raw %}",
     "postcss": "^8.5.3",
-    "tailwindcss": "^4.0.14",
-    "vitest": "^3.0.9",
-    "vue-eslint-parser": "^10.1.1",
-    "vue-tsc": "^2.2.8"
+    "tailwindcss": "{% endraw %}{{ tailwindcss_version }}{% raw %}",
+    "typescript": "{% endraw %}{{ typescript_version }}{% raw %}",
+    "vitest": "{% endraw %}{{ vitest_version }}{% raw %}",
+    "vue-eslint-parser": "{% endraw %}{{ vue_eslint_parser_version }}{% raw %}",
+    "vue-tsc": "{% endraw %}{{ vue_tsc_version }}{% raw %}"
   }
 }{% endraw %}
