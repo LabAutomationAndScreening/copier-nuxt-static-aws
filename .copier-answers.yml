@@ -6,6 +6,7 @@ description: Template for creating a Static Website using Nuxt frontend hosted o
 install_claude_cli: false
 python_ci_versions:
 - 3.12.7
+- 3.13.2
 python_version: 3.12.7
 repo_name: copier-nuxt-static-aws
 repo_org_name: LabAutomationAndScreening
