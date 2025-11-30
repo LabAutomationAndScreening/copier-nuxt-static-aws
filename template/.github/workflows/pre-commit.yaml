@@ -69,4 +69,4 @@ jobs:
             ubuntu-24.04-py${{ inputs.python-version }}-node-${{ inputs.node-version}}-${{ env.cache-name }}-
 
       - name: Run pre-commit
-        run:  pre-commit run -a
+        run: pre-commit run -a
