@@ -2,10 +2,6 @@ import logging
 import mimetypes
 import os
 from pathlib import Path
-import logging
-import mimetypes
-import os
-from pathlib import Path
 from uuid import uuid4
 
 import pulumi
@@ -15,7 +11,6 @@ from ephemeral_pulumi_deploy import get_aws_account_id
 from ephemeral_pulumi_deploy import get_config_str
 from ephemeral_pulumi_deploy.utils import PROTECTED_ENVS
 from pulumi import Output
-from pulumi import Resource
 from pulumi import ResourceOptions
 from pulumi import export
 from pulumi_aws.iam import GetPolicyDocumentStatementArgs
@@ -25,20 +20,6 @@ from pulumi_aws.s3 import BucketObjectv2
 from pulumi_aws_native import cloudfront
 from pulumi_aws_native import s3
 from pulumi_command.local import Command
-import pulumi
-from ephemeral_pulumi_deploy import append_resource_suffix
-from ephemeral_pulumi_deploy import common_tags_native
-from ephemeral_pulumi_deploy import get_aws_account_id
-from ephemeral_pulumi_deploy import get_config_str
-from ephemeral_pulumi_deploy.utils import PROTECTED_ENVS
-from pulumi import Output
-from pulumi import export
-from pulumi_aws.iam import GetPolicyDocumentStatementArgs
-from pulumi_aws.iam import GetPolicyDocumentStatementPrincipalArgs
-from pulumi_aws.iam import get_policy_document
-from pulumi_aws.s3 import BucketObjectv2
-from pulumi_aws_native import cloudfront
-from pulumi_aws_native import s3
 
 from .jinja_constants import APP_DIRECTORY_NAME
 from .jinja_constants import APP_DOMAIN_NAME
