@@ -2,6 +2,7 @@ import logging
 import mimetypes
 import os
 from pathlib import Path
+from uuid import uuid4
 
 import pulumi
 from ephemeral_pulumi_deploy import append_resource_suffix
@@ -10,6 +11,7 @@ from ephemeral_pulumi_deploy import get_aws_account_id
 from ephemeral_pulumi_deploy import get_config_str
 from ephemeral_pulumi_deploy.utils import PROTECTED_ENVS
 from pulumi import Output
+from pulumi import ResourceOptions
 from pulumi import export
 from pulumi_aws.iam import GetPolicyDocumentStatementArgs
 from pulumi_aws.iam import GetPolicyDocumentStatementPrincipalArgs
@@ -17,6 +19,7 @@ from pulumi_aws.iam import get_policy_document
 from pulumi_aws.s3 import BucketObjectv2
 from pulumi_aws_native import cloudfront
 from pulumi_aws_native import s3
+from pulumi_command.local import Command
 
 from .jinja_constants import APP_DIRECTORY_NAME
 from .jinja_constants import APP_DOMAIN_NAME
@@ -71,69 +74,76 @@ def pulumi_program() -> None:
         ),
     )
     export("app-bucket-website-url", app_website_bucket.website_url)
-    _ = app_website_bucket.bucket_name.apply(
-        lambda bucket_name: s3.BucketPolicy(
-            append_resource_suffix("app-website"),
-            bucket=bucket_name,
-            policy_document=get_policy_document(
-                statements=[
-                    GetPolicyDocumentStatementArgs(
-                        effect="Allow",
-                        principals=[
-                            GetPolicyDocumentStatementPrincipalArgs(
-                                type="*",
-                                identifiers=["*"],
-                            )
-                        ],
-                        actions=["s3:GetObject"],
-                        resources=[f"arn:aws:s3:::{bucket_name}/*"],
-                    ),
-                ]
-            ).json,
-        )
+    policy_json = app_website_bucket.bucket_name.apply(
+        lambda name: get_policy_document(
+            statements=[
+                GetPolicyDocumentStatementArgs(
+                    effect="Allow",
+                    principals=[
+                        GetPolicyDocumentStatementPrincipalArgs(
+                            type="*",
+                            identifiers=["*"],
+                        )
+                    ],
+                    actions=["s3:GetObject"],
+                    resources=[f"arn:aws:s3:::{name}/*"],
+                ),
+            ]
+        ).json
     )
-    _upload_assets_to_s3(
+    _ = s3.BucketPolicy(
+        append_resource_suffix("app-website"),
+        bucket=app_website_bucket.bucket_name,  # pyright: ignore[reportArgumentType] # it doesn't seem like it's possible for the bucket name to actually be Output[None]...not sure why the typing suggests that...and not sure a way to assert about Output subtypes
+        policy_document=policy_json,
+    )
+
+    all_uploads = _upload_assets_to_s3(
         bucket_id=app_website_bucket.id, base_dir=repo_root / APP_DIRECTORY_NAME / ".output" / "public"
     )
     if env in PROTECTED_ENVS:
         origin_id = "S3OriginMyBucket"
-        app_cloudfront = app_website_bucket.website_url.apply(
-            lambda full_url: cloudfront.Distribution(
-                append_resource_suffix("app"),
-                distribution_config=cloudfront.DistributionConfigArgs(
-                    price_class="PriceClass_100",
-                    origins=[
-                        cloudfront.DistributionOriginArgs(
-                            domain_name=full_url.removeprefix("http://"),
-                            id=origin_id,
-                            custom_origin_config=cloudfront.DistributionCustomOriginConfigArgs(
-                                http_port=80,
-                                https_port=443,
-                                origin_protocol_policy="http-only",
-                                origin_ssl_protocols=["TLSv1.2"],
-                            ),
-                        )
-                    ],
-                    default_cache_behavior=cloudfront.DistributionDefaultCacheBehaviorArgs(
-                        target_origin_id=origin_id,
-                        viewer_protocol_policy="redirect-to-https",
-                        allowed_methods=["GET", "HEAD"],
-                        cached_methods=["GET", "HEAD"],
-                        forwarded_values=cloudfront.DistributionForwardedValuesArgs(
-                            query_string=False, cookies=cloudfront.DistributionCookiesArgs(forward="none")
+        origin_domain = app_website_bucket.website_url.apply(lambda full_url: full_url.removeprefix("http://"))
+        app_cloudfront = cloudfront.Distribution(
+            append_resource_suffix("app"),
+            distribution_config=cloudfront.DistributionConfigArgs(
+                price_class="PriceClass_100",
+                origins=[
+                    cloudfront.DistributionOriginArgs(
+                        domain_name=origin_domain,
+                        id=origin_id,
+                        custom_origin_config=cloudfront.DistributionCustomOriginConfigArgs(
+                            http_port=80,
+                            https_port=443,
+                            origin_protocol_policy="http-only",
+                            origin_ssl_protocols=["TLSv1.2"],
                         ),
-                    ),
-                    enabled=True,
-                    ipv6_enabled=True,
-                    default_root_object="index.html",
-                    restrictions=cloudfront.DistributionRestrictionsArgs(
-                        geo_restriction=cloudfront.DistributionGeoRestrictionArgs(restriction_type="none")
-                    ),
-                    viewer_certificate=cloudfront.DistributionViewerCertificateArgs(
-                        cloud_front_default_certificate=True
+                    )
+                ],
+                default_cache_behavior=cloudfront.DistributionDefaultCacheBehaviorArgs(
+                    target_origin_id=origin_id,
+                    viewer_protocol_policy="redirect-to-https",
+                    allowed_methods=["GET", "HEAD"],
+                    cached_methods=["GET", "HEAD"],
+                    forwarded_values=cloudfront.DistributionForwardedValuesArgs(
+                        query_string=False, cookies=cloudfront.DistributionCookiesArgs(forward="none")
                     ),
                 ),
-                tags=common_tags_native(),
-            )
+                enabled=True,
+                ipv6_enabled=True,
+                default_root_object="index.html",
+                restrictions=cloudfront.DistributionRestrictionsArgs(
+                    geo_restriction=cloudfront.DistributionGeoRestrictionArgs(restriction_type="none")
+                ),
+                viewer_certificate=cloudfront.DistributionViewerCertificateArgs(cloud_front_default_certificate=True),
+            ),
+            tags=common_tags_native(),
         )
+
         export("app-cloudfront-domain-name", app_cloudfront.domain_name)
+        _ = Command(
+            append_resource_suffix("app-cloudfront-invalidation"),
+            create=app_cloudfront.id.apply(
+                lambda distribution_id: f'aws cloudfront create-invalidation --distribution-id {distribution_id} --paths "/*" && echo {uuid4()}'
+            ),
+            opts=ResourceOptions(depends_on=all_uploads),
+        )
