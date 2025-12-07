@@ -72,8 +72,7 @@ jobs:
       PULUMI_UP: false
       PULUMI_UP_ROLE_NAME: InfraDeploy--{% endraw %}{{ repo_name }}{% raw %}
       AWS_ACCOUNT_ID: "{% endraw %}{{ aws_staging_account_id }}{% raw %}"{% endraw %}{% endif %}{% raw %}
-      DOWNLOAD_ARTIFACT_NAME: app-frontend-static-assets
-      DOWNLOAD_ARTIFACT_PATH: {% endraw %}{{ app_name }}{% raw %}_app/.output/public/
+
 
   pulumi-prod:
     uses: ./.github/workflows/pulumi-aws.yml
@@ -94,6 +93,8 @@ jobs:
       PULUMI_UP: ${{ github.ref == 'refs/heads/main' }}
       PULUMI_UP_ROLE_NAME: InfraDeploy--{% endraw %}{{ repo_name }}{% raw %}
       AWS_ACCOUNT_ID: "{% endraw %}{{ aws_production_account_id }}{% raw %}"
+      DOWNLOAD_ARTIFACT_NAME: app-frontend-static-assets
+      DOWNLOAD_ARTIFACT_PATH: {% endraw %}{{ app_name }}{% raw %}_app/.output/public/
 
   required-check:
     runs-on: {% endraw %}{{ gha_linux_runner }}{% raw %}
