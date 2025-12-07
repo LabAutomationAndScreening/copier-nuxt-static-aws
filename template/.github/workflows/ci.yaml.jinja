@@ -73,7 +73,25 @@ jobs:
       PULUMI_UP_ROLE_NAME: InfraDeploy--{% endraw %}{{ repo_name }}{% raw %}
       AWS_ACCOUNT_ID: "{% endraw %}{{ aws_staging_account_id }}{% raw %}"{% endraw %}{% endif %}{% raw %}
 
-
+  pulumi-prod:
+    uses: ./.github/workflows/pulumi-aws.yml
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.ref == 'refs/heads/main'
+    needs:
+      - build-app-frontend
+    permissions:
+      id-token: write # needed to assume OIDC roles (e.g. for downloading from CodeArtifact)
+      contents: write # needed for mutex
+    with:
+      AWS_REGION: {% endraw %}{{ aws_region_for_stack }}{% raw %}
+      PULUMI_STACK_NAME: prod
+      PYTHON_VERSION: {% endraw %}{{ python_version }}{% raw %}
+      PROJECT_DIR: ./infrastructure
+      DEPLOY_SCRIPT_MODULE_NAME: infra
+      PULUMI_PREVIEW: true
+      PREVIEW_ROLE_NAME: InfraPreview--{% endraw %}{{ repo_name }}{% raw %}
+      PULUMI_UP: ${{ github.ref == 'refs/heads/main' }}
+      PULUMI_UP_ROLE_NAME: InfraDeploy--{% endraw %}{{ repo_name }}{% raw %}
+      AWS_ACCOUNT_ID: "{% endraw %}{{ aws_production_account_id }}{% raw %}"
 
   required-check:
     runs-on: {% endraw %}{{ gha_linux_runner }}{% raw %}
@@ -84,10 +102,11 @@ jobs:
       - lint{% endraw %}{% if use_staging_environment %}{% raw %}
       - plan-to-staging{% endraw %}{% endif %}{% raw %}
       - build-app-frontend
+      - pulumi-prod
     if: always()
     steps:
       - name: fail if prior job failure
-        if: needs.lint.result != 'success' || needs.build-app-frontend.result != 'success'{% endraw %}{% if use_staging_environment %}{% raw %} || needs.plan-to-staging.result != 'success'{% endraw %}{% endif %}{% raw %}
+        if: needs.lint.result != 'success' || needs.build-app-frontend.result != 'success' || (needs.pulumi-prod.result != 'success' && needs.pulumi-prod.result != 'skipped'){% endraw %}{% if use_staging_environment %}{% raw %} || needs.plan-to-staging.result != 'success'{% endraw %}{% endif %}{% raw %}
         run: |
           exit 1
       - name: Mark updated Dependabot commit of devcontainer hash as succeeded
