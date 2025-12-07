@@ -1,7 +1,0 @@
-[
-  {
-    "description": "infrastructure",
-    "relative_directory": "./infrastructure",
-    "package_manager": "uv"
-  }
-]
