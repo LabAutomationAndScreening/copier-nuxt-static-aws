@@ -120,6 +120,11 @@ app_domain_name:
     type: str
     help: What is the domain name for the application (e.g. app.initech.com)?
 
+attach_acm_cert_to_cloudfront:
+    type: bool
+    help: Has the ACM Certificate been fully validated and is ready to attach to the Cloudfront domain?
+    default: no
+
 # Additional Settings
 _min_copier_version: "9.4"
 

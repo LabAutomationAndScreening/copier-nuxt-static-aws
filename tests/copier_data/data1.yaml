@@ -19,3 +19,4 @@ aws_region_for_stack: us-east-2
 app_name: my_app
 has_backend: true
 app_domain_name: myapp.great-company.com
+attach_acm_cert_to_cloudfront: true
