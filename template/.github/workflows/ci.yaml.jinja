@@ -30,6 +30,31 @@ jobs:
     with:
       python-version: {% endraw %}{{ python_version }}{% raw %}
 
+  build-app-frontend:
+    needs:
+      - lint
+    timeout-minutes: {% endraw %}{{ gha_medium_timeout_minutes }}{% raw %}
+    runs-on: {% endraw %}{{ gha_linux_runner }}{% raw %}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@{% endraw %}{{ gha_checkout }}{% raw %}
+
+      - name: Install latest versions of node packages
+        uses: ./.github/actions/install_deps
+        with:
+          node-version: {% endraw %}{{ node_version }}{% raw %}
+          skip-installing-ssm-plugin-manager: true
+
+      - name: Build frontend
+        run: pnpm --dir={% endraw %}{{ app_name }}{% raw %}_app generate
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@{% endraw %}{{ gha_upload_artifact }}{% raw %}
+        with:
+          name: app-frontend-static-assets
+          path: {% endraw %}{{ app_name }}{% raw %}_app/.output/public/**/*
+          if-no-files-found: error
+
 {% endraw %}{% if use_staging_environment %}{% raw %}  plan-to-staging:
     uses: ./.github/workflows/pulumi-aws.yml
     permissions:
@@ -58,10 +83,11 @@ jobs:
       - get-values
       - lint{% endraw %}{% if use_staging_environment %}{% raw %}
       - plan-to-staging{% endraw %}{% endif %}{% raw %}
+      - build-app-frontend
     if: always()
     steps:
       - name: fail if prior job failure
-        if: needs.lint.result != 'success'{% endraw %}{% if use_staging_environment %}{% raw %} || needs.plan-to-staging.result != 'success'{% endraw %}{% endif %}{% raw %}
+        if: needs.lint.result != 'success' || needs.build-app-frontend.result != 'success'{% endraw %}{% if use_staging_environment %}{% raw %} || needs.plan-to-staging.result != 'success'{% endraw %}{% endif %}{% raw %}
         run: |
           exit 1
       - name: Mark updated Dependabot commit of devcontainer hash as succeeded
