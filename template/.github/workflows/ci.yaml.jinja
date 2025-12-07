@@ -5,6 +5,7 @@ on:
     branches-ignore:
       - 'gh-readonly-queue/**' # don't run (again) when on these special branches created during merge groups; the `on: merge_group` already triggers it.
   merge_group:
+  pull_request:
 
 env:
   PYTHONUNBUFFERED: True
@@ -30,6 +31,31 @@ jobs:
     with:
       python-version: {% endraw %}{{ python_version }}{% raw %}
 
+  build-app-frontend:
+    needs:
+      - lint
+    timeout-minutes: {% endraw %}{{ gha_medium_timeout_minutes }}{% raw %}
+    runs-on: {% endraw %}{{ gha_linux_runner }}{% raw %}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@{% endraw %}{{ gha_checkout }}{% raw %}
+
+      - name: Install latest versions of node packages
+        uses: ./.github/actions/install_deps
+        with:
+          node-version: {% endraw %}{{ node_version }}{% raw %}
+          skip-installing-ssm-plugin-manager: true
+
+      - name: Build frontend
+        run: pnpm --dir={% endraw %}{{ app_name }}{% raw %}_app generate
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@{% endraw %}{{ gha_upload_artifact }}{% raw %}
+        with:
+          name: app-frontend-static-assets
+          path: {% endraw %}{{ app_name }}{% raw %}_app/.output/public/**/*
+          if-no-files-found: error
+
 {% endraw %}{% if use_staging_environment %}{% raw %}  plan-to-staging:
     uses: ./.github/workflows/pulumi-aws.yml
     permissions:
@@ -46,9 +72,32 @@ jobs:
       PREVIEW_ROLE_NAME: InfraPreview--{% endraw %}{{ repo_name }}{% raw %}
       PULUMI_UP: false
       PULUMI_UP_ROLE_NAME: InfraDeploy--{% endraw %}{{ repo_name }}{% raw %}
-      AWS_ACCOUNT_ID: "{% endraw %}{{ aws_staging_account_id }}{% raw %}"{% endraw %}{% endif %}{% raw %}
+      AWS_ACCOUNT_ID: "{% endraw %}{{ aws_staging_account_id }}{% raw %}"
+      DOWNLOAD_ARTIFACT_NAME: app-frontend-static-assets
+      DOWNLOAD_ARTIFACT_PATH: {% endraw %}{{ app_name }}{% raw %}_app/.output/public/{% endraw %}{% endif %}{% raw %}
 
 
+  pulumi-prod:
+    uses: ./.github/workflows/pulumi-aws.yml
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.ref == 'refs/heads/main'
+    needs:
+      - build-app-frontend
+    permissions:
+      id-token: write # needed to assume OIDC roles (e.g. for downloading from CodeArtifact)
+      contents: write # needed for mutex
+    with:
+      AWS_REGION: {% endraw %}{{ aws_region_for_stack }}{% raw %}
+      PULUMI_STACK_NAME: prod
+      PYTHON_VERSION: {% endraw %}{{ python_version }}{% raw %}
+      PROJECT_DIR: ./infrastructure
+      DEPLOY_SCRIPT_MODULE_NAME: infrastructure
+      PULUMI_PREVIEW: true
+      PREVIEW_ROLE_NAME: InfraPreview--{% endraw %}{{ repo_name }}{% raw %}
+      PULUMI_UP: ${{ github.ref == 'refs/heads/main' }}
+      PULUMI_UP_ROLE_NAME: InfraDeploy--{% endraw %}{{ repo_name }}{% raw %}
+      AWS_ACCOUNT_ID: "{% endraw %}{{ aws_production_account_id }}{% raw %}"
+      DOWNLOAD_ARTIFACT_NAME: app-frontend-static-assets
+      DOWNLOAD_ARTIFACT_PATH: {% endraw %}{{ app_name }}{% raw %}_app/.output/public/
 
   required-check:
     runs-on: {% endraw %}{{ gha_linux_runner }}{% raw %}
@@ -58,10 +107,12 @@ jobs:
       - get-values
       - lint{% endraw %}{% if use_staging_environment %}{% raw %}
       - plan-to-staging{% endraw %}{% endif %}{% raw %}
+      - build-app-frontend
+      - pulumi-prod
     if: always()
     steps:
       - name: fail if prior job failure
-        if: needs.lint.result != 'success'{% endraw %}{% if use_staging_environment %}{% raw %} || needs.plan-to-staging.result != 'success'{% endraw %}{% endif %}{% raw %}
+        if: needs.lint.result != 'success' || needs.build-app-frontend.result != 'success' || (needs.pulumi-prod.result != 'success' && needs.pulumi-prod.result != 'skipped'){% endraw %}{% if use_staging_environment %}{% raw %} || needs.plan-to-staging.result != 'success'{% endraw %}{% endif %}{% raw %}
         run: |
           exit 1
       - name: Mark updated Dependabot commit of devcontainer hash as succeeded

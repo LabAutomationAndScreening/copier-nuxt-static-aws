@@ -1,0 +1,12 @@
+{% raw %}[
+  {
+    "description": "infrastructure",
+    "relative_directory": "./infrastructure",
+    "package_manager": "uv"
+  },
+  {
+    "description": "app-frontend",
+    "relative_directory": "{% endraw %}{{ app_name }}{% raw %}_app",
+    "package_manager": "pnpm"
+  }
+]{% endraw %}
