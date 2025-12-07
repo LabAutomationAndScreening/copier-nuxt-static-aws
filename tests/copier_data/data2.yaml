@@ -24,3 +24,4 @@ aws_region_for_stack: us-west-1
 app_name: foobar
 has_backend: false
 app_domain_name: foobar.initech.com
+attach_acm_cert_to_cloudfront: false
