@@ -43,7 +43,7 @@ def _get_mime_type(file_path: Path) -> str:
 
 
 def _compute_directory_hash(base_dir: Path) -> str:
-    """Compute a hash of all files in a directory based on their paths, sizes, and modification times."""
+    """Compute a hash of all files in a directory based on their paths and content."""
     hash_md5 = hashlib.md5()  # noqa: S324 # we don't care about security here, just if files have changed for creating the invalidation
 
     for dirpath, _, filenames in sorted(os.walk(base_dir)):
@@ -54,10 +54,8 @@ def _compute_directory_hash(base_dir: Path) -> str:
             # Hash the relative path
             hash_md5.update(rel_path.encode())
 
-            # Hash file size and mtime
-            stat = file_path.stat()
-            hash_md5.update(str(stat.st_size).encode())
-            hash_md5.update(str(stat.st_mtime).encode())
+            with file_path.open("rb") as f:
+                hash_md5.update(f.read())
 
     return hash_md5.hexdigest()
 
@@ -136,12 +134,13 @@ def pulumi_program() -> None:
             append_resource_suffix("certificate"),
             domain_name=f"*.{RAW_DOMAIN_NAME}",
             validation_method="DNS",
-            region="us-east-1",
+            region="us-east-1",  # ACM certificates for CloudFront must be in us-east-1 (see: https://docs.aws.amazon.com/acm/latest/userguide/acm-services.html#acm-cloudfront)
             tags=common_tags(),
         )
         origin_id = "S3OriginMyBucket"
         origin_domain = app_website_bucket.website_url.apply(lambda full_url: full_url.removeprefix("http://"))
         viewer_certificate = cloudfront.DistributionViewerCertificateArgs(cloud_front_default_certificate=True)
+        aliases = [APP_DOMAIN_NAME] if ATTACH_ACM_CERT_TO_CLOUDFRONT else []
         if ATTACH_ACM_CERT_TO_CLOUDFRONT:
             viewer_certificate = cloudfront.DistributionViewerCertificateArgs(  # TODO: determine if this needs to be attached to EVERY distribution, or just a single distribution unrelated to the actual bucket
                 acm_certificate_arn=certificate.arn,
@@ -151,7 +150,7 @@ def pulumi_program() -> None:
         app_cloudfront = cloudfront.Distribution(
             append_resource_suffix("app"),
             distribution_config=cloudfront.DistributionConfigArgs(
-                aliases=[APP_DOMAIN_NAME],
+                aliases=aliases,
                 price_class="PriceClass_100",
                 comment=f"{RAW_DOMAIN_NAME} App CloudFront Distribution",
                 origins=[
