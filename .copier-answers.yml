@@ -1,5 +1,5 @@
 # Changes here will be overwritten by Copier
-_commit: v0.0.88
+_commit: v0.0.91
 _src_path: gh:LabAutomationAndScreening/copier-base-template.git
 description: Template for creating a Static Website using Nuxt frontend hosted on
     AWS
@@ -13,6 +13,7 @@ repo_org_name: LabAutomationAndScreening
 repo_org_name_for_copyright: LabAutomationAndScreening
 ssh_port_number: 55734
 template_might_want_to_install_aws_ssm_port_forwarding_plugin: false
+template_might_want_to_use_python_asyncio: false
 template_might_want_to_use_vcrpy: false
 template_uses_javascript: true
 template_uses_pulumi: true
