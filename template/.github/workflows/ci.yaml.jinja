@@ -106,8 +106,7 @@ jobs:
     permissions:
       statuses: write # needed for updating status on Dependabot PRs
     needs:
-      - get-values
-      - lint{% endraw %}{% if use_staging_environment %}{% raw %}
+      - get-values{% endraw %}{% if use_staging_environment %}{% raw %}
       - plan-to-staging{% endraw %}{% endif %}{% raw %}
       - build-app-frontend
       - pulumi-prod
