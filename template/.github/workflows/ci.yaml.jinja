@@ -22,7 +22,8 @@ jobs:
       contents: write # needed updating dependabot branches
 
   lint:
-    needs: [ get-values ]
+    needs:
+      - get-values
     name: Pre-commit
     uses: ./.github/workflows/pre-commit.yaml
     permissions:
@@ -61,7 +62,8 @@ jobs:
     permissions:
       contents: write # needed for mutex
       id-token: write # needed to assume OIDC roles (e.g. for downloading from CodeArtifact)
-    needs: [ lint ]
+    needs:
+      - lint
     with:
       AWS_REGION: {% endraw %}{{ aws_org_home_region }}{% raw %}
       PULUMI_STACK_NAME: staging
@@ -112,7 +114,11 @@ jobs:
     if: always()
     steps:
       - name: fail if prior job failure
-        if: needs.lint.result != 'success' || needs.build-app-frontend.result != 'success' || (needs.pulumi-prod.result != 'success' && needs.pulumi-prod.result != 'skipped'){% endraw %}{% if use_staging_environment %}{% raw %} || needs.plan-to-staging.result != 'success'{% endraw %}{% endif %}{% raw %}
+        if: >-
+          needs.get-values.result != 'success' ||
+          needs.build-app-frontend.result != 'success' ||{% endraw %}{% if use_staging_environment %}{% raw %}
+          needs.plan-to-staging.result != 'success' ||{% endraw %}{% endif %}{% raw %}
+          (needs.pulumi-prod.result != 'success' && needs.pulumi-prod.result != 'skipped')
         run: |
           exit 1
       - name: Mark updated Dependabot commit of devcontainer hash as succeeded
