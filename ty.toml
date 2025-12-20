@@ -1,0 +1,20 @@
+[src]
+exclude = [
+    # excludes managed by this repository
+
+     "**/template/**", # without the dependencies of the template installed, running pyright on them within the copier template is not useful
+
+    # excludes managed by template
+    "**/node_modules",
+    "**/.precommit_cache",
+    "**/.ruff_cache",
+    "**/.npm_cache",
+    "**/.pipx_cache",
+    "**/__pycache__",
+    "**/vendor_files",
+    "**/generated/graphql",
+    "**/generated/open_api",
+    "**/.venv",
+    "**/venv",
+    "**/copier_template_resources"
+]
