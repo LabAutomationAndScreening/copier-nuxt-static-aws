@@ -6,11 +6,11 @@ from pathlib import Path
 
 
 HOOK_ID_LINE = re.compile(r"^-\s+id:\s")
-_GRAPHQL_LAMBDA_ID = re.compile(r"-\s+id:\s+(graphql[_-]lambda)")
+_GRAPHQL_LAMBDA_ID_LINE = re.compile(r"^\s*-\s+id:\s+.*graphql[_-]lambda")
 
 
 def _is_graphql_lambda_hook_block(block_lines: list[str]) -> bool:
-    return bool(_GRAPHQL_LAMBDA_ID.search(block_lines[0])) if block_lines else False
+    return bool(_GRAPHQL_LAMBDA_ID_LINE.search(block_lines[0])) if block_lines else False
 
 
 def remove_graphql_lambda_hook_blocks(config_path: Path) -> int:
