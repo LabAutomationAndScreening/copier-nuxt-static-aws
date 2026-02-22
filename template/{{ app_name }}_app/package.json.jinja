@@ -44,7 +44,7 @@
     "@nuxtjs/apollo": "{% endraw %}{{ nuxt_apollo_version }}{% raw %}",{% endraw %}{% endif %}{% raw %}
     "@nuxtjs/eslint-config-typescript": "^12.1.0",
     "@playwright/test": "{% endraw %}{{ playwright_version }}{% raw %}",
-    "@types/node": "{% endraw %}{{ types_node_version }}{% raw %}",
+    "@types/node": "^{% endraw %}{{ node_version.split('.')[0] }}{% raw %}",
     "@vitest/coverage-istanbul": "{% endraw %}{{ vitest_version }}{% raw %}",{% endraw %}{% if frontend_uses_graphql %}{% raw %}
     "@vue/apollo-composable": "^4.2.2",{% endraw %}{% endif %}{% raw %}
     "@vue/devtools-api": "{% endraw %}{{ vue_devtools_api_version }}{% raw %}",

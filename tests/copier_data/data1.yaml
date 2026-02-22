@@ -5,11 +5,12 @@ is_open_source: true
 description: Doing amazing things
 install_claude_cli: false
 ssh_port_number: 12345
+pull_from_ecr: false
 
 
 
 
-node_version: 22.13.0
+node_version: 24.11.1
 
 python_package_registry: PyPI
 aws_identity_center_id: d-9145c20053

@@ -107,21 +107,23 @@ def pulumi_program() -> None:
     )
     export("app-bucket-website-url", app_website_bucket.website_url)
     policy_json = app_website_bucket.bucket_name.apply(
-        lambda name: get_policy_document(
-            statements=[
-                GetPolicyDocumentStatementArgs(
-                    effect="Allow",
-                    principals=[
-                        GetPolicyDocumentStatementPrincipalArgs(
-                            type="*",
-                            identifiers=["*"],
-                        )
-                    ],
-                    actions=["s3:GetObject"],
-                    resources=[f"arn:aws:s3:::{name}/*"],
-                ),
-            ]
-        ).json
+        lambda name: (
+            get_policy_document(
+                statements=[
+                    GetPolicyDocumentStatementArgs(
+                        effect="Allow",
+                        principals=[
+                            GetPolicyDocumentStatementPrincipalArgs(
+                                type="*",
+                                identifiers=["*"],
+                            )
+                        ],
+                        actions=["s3:GetObject"],
+                        resources=[f"arn:aws:s3:::{name}/*"],
+                    ),
+                ]
+            ).json
+        )
     )
     _ = s3.BucketPolicy(
         append_resource_suffix("app-website"),
@@ -191,7 +193,9 @@ def pulumi_program() -> None:
         _ = Command(
             append_resource_suffix("app-cloudfront-invalidation"),
             create=app_cloudfront.id.apply(
-                lambda distribution_id: f'aws cloudfront create-invalidation --distribution-id {distribution_id} --paths "/*" && echo {_compute_directory_hash(static_files_dir)}'
+                lambda distribution_id: (
+                    f'aws cloudfront create-invalidation --distribution-id {distribution_id} --paths "/*" && echo {_compute_directory_hash(static_files_dir)}'
+                )
             ),
             opts=ResourceOptions(depends_on=all_uploads),
         )

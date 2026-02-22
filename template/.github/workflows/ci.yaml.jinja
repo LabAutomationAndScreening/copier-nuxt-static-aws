@@ -21,9 +21,26 @@ jobs:
     permissions:
       contents: write # needed updating dependabot branches
 
+  check-skip-duplicate:
+    runs-on: {% endraw %}{{ gha_linux_runner }}{% raw %}
+    permissions:
+      contents: read
+      pull-requests: read # needed to check if PR exists for current branch
+    outputs:
+      should-run: ${{ steps.check.outputs.should-run }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@{% endraw %}{{ gha_checkout }}{% raw %}
+        with:
+          persist-credentials: false
+      - id: check
+        uses: ./.github/actions/check-skip-duplicates
+
   lint:
     needs:
       - get-values
+      - check-skip-duplicate
+    if: needs.check-skip-duplicate.outputs.should-run == 'true'
     name: Pre-commit
     uses: ./.github/workflows/pre-commit.yaml
     permissions:
@@ -34,7 +51,9 @@ jobs:
 
   build-app-frontend:
     needs:
+      - check-skip-duplicate
       - lint
+    if: needs.check-skip-duplicate.outputs.should-run == 'true'
     timeout-minutes: {% endraw %}{{ gha_medium_timeout_minutes }}{% raw %}
     runs-on: {% endraw %}{{ gha_linux_runner }}{% raw %}
     steps:
@@ -62,8 +81,11 @@ jobs:
     permissions:
       contents: write # needed for mutex
       id-token: write # needed to assume OIDC roles (e.g. for downloading from CodeArtifact)
+      pull-requests: write # needed to potentially post the preview on the PR as a comment
     needs:
-      - lint
+      - build-app-frontend
+      - check-skip-duplicate
+    if: needs.check-skip-duplicate.outputs.should-run == 'true'
     with:
       AWS_REGION: {% endraw %}{{ aws_org_home_region }}{% raw %}
       PULUMI_STACK_NAME: staging
@@ -81,12 +103,14 @@ jobs:
 
   pulumi-prod:
     uses: ./.github/workflows/pulumi-aws.yml
-    if: github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.ref == 'refs/heads/main'
     needs:
       - build-app-frontend
+      - check-skip-duplicate
+    if: needs.check-skip-duplicate.outputs.should-run == 'true' && (github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.ref == 'refs/heads/main')
     permissions:
       id-token: write # needed to assume OIDC roles (e.g. for downloading from CodeArtifact)
       contents: write # needed for mutex
+      pull-requests: write # needed to potentially post the preview on the PR as a comment
     with:
       AWS_REGION: {% endraw %}{{ aws_region_for_stack }}{% raw %}
       PULUMI_STACK_NAME: prod
@@ -101,25 +125,44 @@ jobs:
       DOWNLOAD_ARTIFACT_NAME: app-frontend-static-assets
       DOWNLOAD_ARTIFACT_PATH: {% endraw %}{{ app_name }}{% raw %}_app/.output/public/
 
-  required-check:
+  workflow-summary:
     runs-on: {% endraw %}{{ gha_linux_runner }}{% raw %}
     permissions:
       statuses: write # needed for updating status on Dependabot PRs
     needs:
-      - get-values{% endraw %}{% if use_staging_environment %}{% raw %}
+      - get-values
+      - lint{% endraw %}{% if use_staging_environment %}{% raw %}
       - plan-to-staging{% endraw %}{% endif %}{% raw %}
       - build-app-frontend
       - pulumi-prod
+      - check-skip-duplicate
     if: always()
     steps:
       - name: fail if prior job failure
-        if: >-
-          needs.get-values.result != 'success' ||
-          needs.build-app-frontend.result != 'success' ||{% endraw %}{% if use_staging_environment %}{% raw %}
-          needs.plan-to-staging.result != 'success' ||{% endraw %}{% endif %}{% raw %}
-          (needs.pulumi-prod.result != 'success' && needs.pulumi-prod.result != 'skipped')
         run: |
-          exit 1
+          success_pattern="^(skipped|success)$" # these are the possibilities: https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#needs-context
+
+          if [[ ! "${{ needs.get-values.result }}" =~ $success_pattern ]] ||
+            [[ ! "${{ needs.lint.result }}" =~ $success_pattern ]] ||
+            [[ ! "${{ needs.build-app-frontend.result }}" =~ $success_pattern ]] ||{% endraw %}{% if use_staging_environment %}{% raw %}
+            [[ ! "${{ needs.plan-to-staging.result }}" =~ $success_pattern ]] ||{% endraw %}{% endif %}{% raw %}
+            [[ ! "${{ needs.pulumi-prod.result }}" =~ $success_pattern ]]; then
+            echo "❌ One or more jobs did not finish with skipped or success"
+            exit 1
+          fi
+          echo "✅ All jobs finished with skipped or success"
+
+      - name: Mark the required-check as succeeded so the PR can be merged
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api \
+            -X POST -H "Accept: application/vnd.github.v3+json" \
+            "${{ github.event.pull_request.statuses_url }}" \
+            -f state=success -f context="required-check" -f description="✅ All required checks passed in the job triggered by pull_request" \
+            -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
       - name: Mark updated Dependabot commit of devcontainer hash as succeeded
         if: needs.get-values.outputs.dependabot-commit-created == 'true'
         env:
