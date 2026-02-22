@@ -148,6 +148,10 @@ _tasks:
         else
             echo "ruff.toml not found; skipping Ruff target-version update."
         fi
+  - when: "{{ not has_backend }}"
+    command: |
+        echo "Removing graphql_lambda-related hooks because has_backend is false..."
+        python '{{ _copier_conf.src_path }}/copier_tasks/remove_graphql_lambda_hooks.py' .pre-commit-config.yaml
 
 # Additional Settings
 _min_copier_version: "9.4"
