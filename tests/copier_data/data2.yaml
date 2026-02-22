@@ -5,11 +5,12 @@ is_open_source: false
 description: Doing crazy things! So many things!
 install_claude_cli: true
 ssh_port_number: 54321
+pull_from_ecr: true
 
 
 
 
-node_version: 22.14.0
+node_version: 24.11.1
 
 python_package_registry: AWS CodeArtifact
 aws_central_infrastructure_account_id: 012321432543
