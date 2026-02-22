@@ -113,13 +113,17 @@ jobs:
     if: always()
     steps:
       - name: fail if prior job failure
-        if: >-
-          needs.get-values.result != 'success' ||
-          needs.build-app-frontend.result != 'success' ||{% endraw %}{% if use_staging_environment %}{% raw %}
-          needs.plan-to-staging.result != 'success' ||{% endraw %}{% endif %}{% raw %}
-          (needs.pulumi-prod.result != 'success' && needs.pulumi-prod.result != 'skipped')
         run: |
-          exit 1
+          success_pattern="^(skipped|success)$" # these are the possibilities: https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#needs-context
+
+          if [[ ! "${{ needs.get-values.result }}" =~ $success_pattern ]] ||
+            [[ ! "${{ needs.build-app-frontend.result }}" =~ $success_pattern ]] ||{% endraw %}{% if use_staging_environment %}{% raw %}
+            [[ ! "${{ needs.plan-to-staging.result }}" =~ $success_pattern ]] ||{% endraw %}{% endif %}{% raw %}
+            [[ ! "${{ needs.pulumi-prod.result }}" =~ $success_pattern ]]; then
+            echo "❌ One or more jobs did not finish with skipped or success"
+            exit 1
+          fi
+          echo "✅ All jobs finished with skipped or success"
       - name: Mark updated Dependabot commit of devcontainer hash as succeeded
         if: needs.get-values.outputs.dependabot-commit-created == 'true'
         env:
