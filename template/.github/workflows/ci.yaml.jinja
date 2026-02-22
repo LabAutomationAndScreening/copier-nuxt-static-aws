@@ -130,7 +130,8 @@ jobs:
     permissions:
       statuses: write # needed for updating status on Dependabot PRs
     needs:
-      - get-values{% endraw %}{% if use_staging_environment %}{% raw %}
+      - get-values
+      - lint{% endraw %}{% if use_staging_environment %}{% raw %}
       - plan-to-staging{% endraw %}{% endif %}{% raw %}
       - build-app-frontend
       - pulumi-prod
@@ -142,6 +143,7 @@ jobs:
           success_pattern="^(skipped|success)$" # these are the possibilities: https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#needs-context
 
           if [[ ! "${{ needs.get-values.result }}" =~ $success_pattern ]] ||
+            [[ ! "${{ needs.lint.result }}" =~ $success_pattern ]] ||
             [[ ! "${{ needs.build-app-frontend.result }}" =~ $success_pattern ]] ||{% endraw %}{% if use_staging_environment %}{% raw %}
             [[ ! "${{ needs.plan-to-staging.result }}" =~ $success_pattern ]] ||{% endraw %}{% endif %}{% raw %}
             [[ ! "${{ needs.pulumi-prod.result }}" =~ $success_pattern ]]; then
