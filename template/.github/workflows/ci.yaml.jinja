@@ -90,6 +90,7 @@ jobs:
       AWS_REGION: {% endraw %}{{ aws_org_home_region }}{% raw %}
       PULUMI_STACK_NAME: staging
       PYTHON_VERSION: {% endraw %}{{ python_version }}{% raw %}
+      PROJECT_DIR: ./infrastructure
       DEPLOY_SCRIPT_MODULE_NAME: infrastructure
       DEPLOY_SCRIPT_NAME: pulumi_deploy
       PULUMI_PREVIEW: true
