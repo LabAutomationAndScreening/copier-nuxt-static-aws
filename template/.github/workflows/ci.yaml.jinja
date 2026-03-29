@@ -12,14 +12,14 @@ env:
   PRE_COMMIT_HOME: ${{ github.workspace }}/.precommit_cache
 
 permissions:
-    id-token: write
-    contents: write # needed for mutex
+  id-token: write # needed to assume OIDC roles (e.g. for downloading from CodeArtifact)
+  contents: write # needed for mutex
 
 jobs:
   get-values:
     uses: ./.github/workflows/get-values.yaml
     permissions:
-      contents: write # needed updating dependabot branches
+      contents: write # needed to push commit of new devcontainer hash for dependabot PRs    
 
   check-skip-duplicate:
     runs-on: {% endraw %}{{ gha_linux_runner }}{% raw %}
@@ -127,17 +127,23 @@ jobs:
       DOWNLOAD_ARTIFACT_NAME: app-frontend-static-assets
       DOWNLOAD_ARTIFACT_PATH: {% endraw %}{{ app_name }}{% raw %}_app/.output/public/
 
+  confirm-on-tagged-copier-template:
+    if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
+    uses: ./.github/workflows/confirm-on-tagged-copier-template.yaml
+
   workflow-summary:
     runs-on: {% endraw %}{{ gha_linux_runner }}{% raw %}
-    permissions:
-      statuses: write # needed for updating status on Dependabot PRs
+    timeout-minutes: {% endraw %}{{ gha_short_timeout_minutes }}{% raw %}
     needs:
       - get-values
       - lint{% endraw %}{% if use_staging_environment %}{% raw %}
       - plan-to-staging{% endraw %}{% endif %}{% raw %}
       - build-app-frontend
-      - pulumi-prod
+      - pulumi-prod      
       - check-skip-duplicate
+      - confirm-on-tagged-copier-template
+    permissions:
+      statuses: write # needed for updating status on Dependabot PRs
     if: always()
     steps:
       - name: fail if prior job failure
@@ -145,17 +151,19 @@ jobs:
           success_pattern="^(skipped|success)$" # these are the possibilities: https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#needs-context
 
           if [[ ! "${{ needs.get-values.result }}" =~ $success_pattern ]] ||
+            [[ ! "${{ needs.check-skip-duplicate.result }}" =~ $success_pattern ]] ||
             [[ ! "${{ needs.lint.result }}" =~ $success_pattern ]] ||
             [[ ! "${{ needs.build-app-frontend.result }}" =~ $success_pattern ]] ||{% endraw %}{% if use_staging_environment %}{% raw %}
             [[ ! "${{ needs.plan-to-staging.result }}" =~ $success_pattern ]] ||{% endraw %}{% endif %}{% raw %}
-            [[ ! "${{ needs.pulumi-prod.result }}" =~ $success_pattern ]]; then
+            [[ ! "${{ needs.pulumi-prod.result }}" =~ $success_pattern ]] ||       
+            [[ ! "${{ needs.confirm-on-tagged-copier-template.result }}" =~ $success_pattern ]]; then
             echo "❌ One or more jobs did not finish with skipped or success"
             exit 1
           fi
           echo "✅ All jobs finished with skipped or success"
 
       - name: Mark the required-check as succeeded so the PR can be merged
-        if: ${{ github.event_name == 'pull_request' }}
+        if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -165,7 +173,7 @@ jobs:
             -f state=success -f context="required-check" -f description="✅ All required checks passed in the job triggered by pull_request" \
             -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
-      - name: Mark updated Dependabot commit of devcontainer hash as succeeded
+      - name: Mark updated dependabot hash commit as succeeded
         if: needs.get-values.outputs.dependabot-commit-created == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
