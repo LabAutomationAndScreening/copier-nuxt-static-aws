@@ -19,7 +19,7 @@ jobs:
   get-values:
     uses: ./.github/workflows/get-values.yaml
     permissions:
-      contents: write # needed to push commit of new devcontainer hash for dependabot PRs    
+      contents: write # needed to push commit of new devcontainer hash for dependabot PRs
 
   check-skip-duplicate:
     runs-on: {% endraw %}{{ gha_linux_runner }}{% raw %}
@@ -139,7 +139,7 @@ jobs:
       - lint{% endraw %}{% if use_staging_environment %}{% raw %}
       - plan-to-staging{% endraw %}{% endif %}{% raw %}
       - build-app-frontend
-      - pulumi-prod      
+      - pulumi-prod
       - check-skip-duplicate
       - confirm-on-tagged-copier-template
     permissions:
@@ -155,7 +155,7 @@ jobs:
             [[ ! "${{ needs.lint.result }}" =~ $success_pattern ]] ||
             [[ ! "${{ needs.build-app-frontend.result }}" =~ $success_pattern ]] ||{% endraw %}{% if use_staging_environment %}{% raw %}
             [[ ! "${{ needs.plan-to-staging.result }}" =~ $success_pattern ]] ||{% endraw %}{% endif %}{% raw %}
-            [[ ! "${{ needs.pulumi-prod.result }}" =~ $success_pattern ]] ||       
+            [[ ! "${{ needs.pulumi-prod.result }}" =~ $success_pattern ]] ||
             [[ ! "${{ needs.confirm-on-tagged-copier-template.result }}" =~ $success_pattern ]]; then
             echo "❌ One or more jobs did not finish with skipped or success"
             exit 1
