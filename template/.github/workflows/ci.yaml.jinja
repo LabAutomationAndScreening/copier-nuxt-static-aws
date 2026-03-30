@@ -140,7 +140,7 @@ jobs:
     needs:
       - get-values
       - lint{% endraw %}{% if use_pulumi-staging_environment %}{% raw %}
-      - staging{% endraw %}{% endif %}{% raw %}
+      - pulumi-staging{% endraw %}{% endif %}{% raw %}
       - build-app-frontend
       - pulumi-prod
       - check-skip-duplicate
