@@ -77,7 +77,7 @@ jobs:
           path: {% endraw %}{{ app_name }}{% raw %}_app/.output/public/**/*
           if-no-files-found: error
 
-{% endraw %}{% if use_staging_environment %}{% raw %}  plan-to-staging:
+{% endraw %}{% if use_staging_environment %}{% raw %}  pulumi-staging:
     uses: ./.github/workflows/pulumi-aws.yml
     permissions:
       contents: write # needed for mutex
@@ -96,7 +96,7 @@ jobs:
       DEPLOY_SCRIPT_NAME: pulumi_deploy
       PULUMI_PREVIEW: true
       PREVIEW_ROLE_NAME: InfraPreview--{% endraw %}{{ repo_name }}{% raw %}
-      PULUMI_UP: false
+      PULUMI_UP: ${{ github.ref == 'refs/heads/main' }}
       PULUMI_UP_ROLE_NAME: InfraDeploy--{% endraw %}{{ repo_name }}{% raw %}
       AWS_ACCOUNT_ID: "{% endraw %}{{ aws_staging_account_id }}{% raw %}"
       SHOW_PREVIEW_COMMENT_ON_PR: ${{ github.event_name == 'pull_request' }}
@@ -138,8 +138,8 @@ jobs:
     timeout-minutes: {% endraw %}{{ gha_short_timeout_minutes }}{% raw %}
     needs:
       - get-values
-      - lint{% endraw %}{% if use_staging_environment %}{% raw %}
-      - plan-to-staging{% endraw %}{% endif %}{% raw %}
+      - lint{% endraw %}{% if use_pulumi-staging_environment %}{% raw %}
+      - staging{% endraw %}{% endif %}{% raw %}
       - build-app-frontend
       - pulumi-prod
       - check-skip-duplicate
@@ -156,7 +156,7 @@ jobs:
             [[ ! "${{ needs.check-skip-duplicate.result }}" =~ $success_pattern ]] ||
             [[ ! "${{ needs.lint.result }}" =~ $success_pattern ]] ||
             [[ ! "${{ needs.build-app-frontend.result }}" =~ $success_pattern ]] ||{% endraw %}{% if use_staging_environment %}{% raw %}
-            [[ ! "${{ needs.plan-to-staging.result }}" =~ $success_pattern ]] ||{% endraw %}{% endif %}{% raw %}
+            [[ ! "${{ needs.pulumi-staging.result }}" =~ $success_pattern ]] ||{% endraw %}{% endif %}{% raw %}
             [[ ! "${{ needs.pulumi-prod.result }}" =~ $success_pattern ]] ||
             [[ ! "${{ needs.confirm-on-tagged-copier-template.result }}" =~ $success_pattern ]]; then
             echo "❌ One or more jobs did not finish with skipped or success"
