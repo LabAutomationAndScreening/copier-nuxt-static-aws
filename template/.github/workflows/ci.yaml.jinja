@@ -139,7 +139,7 @@ jobs:
     timeout-minutes: {% endraw %}{{ gha_short_timeout_minutes }}{% raw %}
     needs:
       - get-values
-      - lint{% endraw %}{% if use_pulumi-staging_environment %}{% raw %}
+      - lint{% endraw %}{% if use_staging_environment %}{% raw %}
       - pulumi-staging{% endraw %}{% endif %}{% raw %}
       - build-app-frontend
       - pulumi-prod
