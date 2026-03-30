@@ -65,6 +65,7 @@ jobs:
         with:
           node-version: {% endraw %}{{ node_version }}{% raw %}
           skip-installing-ssm-plugin-manager: true
+          skip-installing-pulumi-cli: true
 
       - name: Build frontend
         run: pnpm --dir={% endraw %}{{ app_name }}{% raw %}_app generate
