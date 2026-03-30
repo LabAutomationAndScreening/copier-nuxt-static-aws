@@ -108,7 +108,8 @@ jobs:
     uses: ./.github/workflows/pulumi-aws.yml
     needs:
       - build-app-frontend
-      - check-skip-duplicate
+      - check-skip-duplicate{% endraw %}{% if use_staging_environment %}{% raw %}
+      - pulumi-staging{% endraw %}{% endif %}{% raw %}
     if: needs.check-skip-duplicate.outputs.should-run == 'true' && (github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.ref == 'refs/heads/main')
     permissions:
       id-token: write # needed to assume OIDC roles (e.g. for downloading from CodeArtifact)
