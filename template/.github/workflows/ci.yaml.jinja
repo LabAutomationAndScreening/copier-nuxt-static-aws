@@ -99,6 +99,7 @@ jobs:
       PULUMI_UP: false
       PULUMI_UP_ROLE_NAME: InfraDeploy--{% endraw %}{{ repo_name }}{% raw %}
       AWS_ACCOUNT_ID: "{% endraw %}{{ aws_staging_account_id }}{% raw %}"
+      SHOW_PREVIEW_COMMENT_ON_PR: ${{ github.event_name == 'pull_request' }}
       DOWNLOAD_ARTIFACT_NAME: app-frontend-static-assets
       DOWNLOAD_ARTIFACT_PATH: {% endraw %}{{ app_name }}{% raw %}_app/.output/public/{% endraw %}{% endif %}{% raw %}
 
