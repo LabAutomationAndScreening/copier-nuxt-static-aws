@@ -25,8 +25,10 @@
       "Bash(~/.claude/hooks/*)",
       "Bash(~/.agents/skills/*)",
       "Bash(~/.claude/skills/*)",
+      "Bash(.claude/skills/**/*)",
       // File System
       "Bash(bat *)",
+      "Bash(cd /workspaces/*)",
       "Bash(chmod *)",
       "Bash(cp *)",
       "Bash(eza *)",
@@ -40,11 +42,29 @@
       "Bash(touch *)",
       "Bash(tree *)",
       // Git & Version Control
-      "Bash(git diff *)",
-      "Bash(git status *)",
-      "Bash(git log *)",
-      "Bash(git rev-parse *)",
+      "Bash(git add *)",
       "Bash(git branch *)",
+      "Bash(git checkout *)",
+      "Bash(git commit *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git push)",
+      "Bash(git remote get-url origin)",
+      "Bash(git rev-parse *)",
+      "Bash(git status *)",
+      // Github
+      "Bash(gh issue list *)",
+      "Bash(gh issue view *)",
+      "Bash(gh run download *)",
+      "Bash(gh run list *)",
+      "Bash(gh run view *)",
+      "Bash(gh run watch *)",
+      "Bash(gh search *)",
+      "Bash(gh pr view *)",
+      "Bash(gh pr diff *)",
+      // Local app interaction
+      "Bash(curl http://localhost:*)",
+      "Bash(curl -s http://localhost:*)",
       // Misc
       "Bash(amp *)",
       "Bash(atuin *)",
@@ -57,8 +77,9 @@
       "Bash(test *)",
       "Bash(zk *)",
       // Node.js
-      "Bash(pnpm test-unit *)",
-      "Bash(pnpm test-e2e *)",
+      "Bash(pnpm list *)",
+      "Bash(pnpm test*)",
+      "Bash(pnpm view *)",
       // Python
       "Bash(uv run pytest *)",
       // Text Processing
@@ -75,9 +96,6 @@
       // Search
       "Bash(rg *)",
       // Research
-      "Bash(gh issue list *)",
-      "Bash(gh pr view *)",
-      "Bash(gh pr diff *)"
     ],
     "ask": [
       // let's hold off before we let it use the github CLI in any free running allow mode...I don't want it somehow approving PRs with the user's credentials
@@ -89,19 +107,21 @@
       "Bash(curl *)",
       "Bash(ln *)",
       "WebFetch",
+      // Git & Version Control
+      "Bash(git reset --hard *)",
     ],
     "deny": [
       // Exceptions to generally allowed AI tooling
       "Bash(bd init*)", // we need to control the init process, don't let AI do that in the background
       // Github
       // Claude should not ever interfere with the PR process, that is how we gate AI's work
-      "Bash(gh pr create *)",
-      "Bash(gh pr edit *)",
-      "Bash(gh pr ready *)",
-      "Bash(gh pr review *)",
-      "Bash(gh pr merge *)",
       "Bash(gh pr close *)",
       "Bash(gh pr comment *)",
+      "Bash(gh pr create *)",
+      "Bash(gh pr edit *)",
+      "Bash(gh pr merge *)",
+      "Bash(gh pr ready *)",
+      "Bash(gh pr review *)",
       "Bash(gh pr update-branch *)",
 
       // Destructive File Operations
@@ -118,7 +138,6 @@
       "Bash(kill -9 *)",
       "Bash(killall *)",
       // Git & Version Control
-      "Bash(git reset --hard *)",
       "Bash(git push -f *)",
       "Bash(git push --force*)",
       // Node.js

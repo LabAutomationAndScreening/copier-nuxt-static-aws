@@ -6,11 +6,14 @@ description: Doing crazy things! So many things!
 install_claude_cli: true
 ssh_port_number: 54321
 pull_from_ecr: true
+repo_names_for_codespaces_read_permissions: best-repo,good-project
 
 
 
 
 node_version: 24.11.1
+pnpm_minimum_release_age_exclude: 'somelib, another-pkg'
+
 
 python_package_registry: AWS CodeArtifact
 aws_central_infrastructure_account_id: 012321432543
@@ -23,6 +26,7 @@ aws_staging_account_id: 210987654321
 aws_test_account_id: 211735654321
 aws_development_account_id: 000321456870
 aws_region_for_stack: us-west-1
+
 # Data added based on the specifics of this template
 app_name: foobar
 has_backend: false
