@@ -20,7 +20,18 @@ To create a new repository using this template:
 
 # Development
 
+Multi-step workflows are defined as [Task](https://taskfile.dev) tasks. Run `task --list` to see them; the definitions live in `.config/taskfiles/`, and `Taskfile.yaml` in the repo root is only a shim that includes them.
+
 
 ## Updating from the template
-This repository uses a copier template. To pull in the latest updates from the template, use the command:
-`copier update --trust --conflict rej --defaults`
+This repository uses a copier template. To pull in the latest updates from the template, run `task copier-update`
+
+<!--
+============== WARNING ==============================================================================
+File is managed by copier template: gh:LabAutomationAndScreening/copier-base-template.git
+See .config/.copier-managed-files.json for details.
+
+You are welcome to make changes to this file in your repo if they are custom to your project,
+but if the change should be shared with other projects, please backport it to the template repo.
+=====================================================================================================
+-->

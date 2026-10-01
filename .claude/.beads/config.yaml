@@ -1,3 +1,10 @@
+# ============== WARNING ==============================================================================
+# File is managed by copier template: gh:LabAutomationAndScreening/copier-base-template.git
+# See .config/.copier-managed-files.json for details.
+#
+# You are welcome to make changes to this file in your repo if they are custom to your project,
+# but if the change should be shared with other projects, please backport it to the template repo.
+# =====================================================================================================
 # Beads Configuration File
 # This file configures default behavior for all bd commands in this repository
 # All settings can also be set via environment variables (BD_* prefix)
@@ -18,11 +25,6 @@
 
 # Default actor for audit trails (overridden by BD_ACTOR or --actor)
 # actor: ""
-
-# Export events (audit trail) to .beads/events.jsonl on each flush/sync
-# When enabled, new events are appended incrementally using a high-water mark.
-# Use 'bd export --events' to trigger manually regardless of this setting.
-# events-export: false
 
 # Multi-repo configuration (experimental - bd-307)
 # Allows hydrating from multiple repositories and routing writes to the correct JSONL

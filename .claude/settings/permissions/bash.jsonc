@@ -1,3 +1,12 @@
+/*
+ * ============== WARNING ==============================================================================
+ * File is managed by copier template: gh:LabAutomationAndScreening/copier-base-template.git
+ * See .config/.copier-managed-files.json for details.
+ *
+ * You are welcome to make changes to this file in your repo if they are custom to your project,
+ * but if the change should be shared with other projects, please backport it to the template repo.
+ * =====================================================================================================
+ */
 {
   // Bash command permissions - allowed and denied shell operations
   // This should only ever be running in a devcontainer, so pretty lenient permissions are allowed
@@ -41,18 +50,8 @@
       "Bash(tar *)",
       "Bash(touch *)",
       "Bash(tree *)",
-      // Git & Version Control
-      "Bash(git add *)",
-      "Bash(git branch *)",
-      "Bash(git checkout *)",
-      "Bash(git commit *)",
-      "Bash(git diff *)",
-      "Bash(git log *)",
-      "Bash(git mv *)",
-      "Bash(git push)",
-      "Bash(git remote get-url origin)",
-      "Bash(git rev-parse *)",
-      "Bash(git status *)",
+      // Git & Version Control - anything not explicitly denied
+      "Bash(git *)",
       // Github
       "Bash(gh issue list *)",
       "Bash(gh issue view *)",
@@ -105,12 +104,12 @@
       "Bash(amp *)",
       "Bash(atuin *)",
       "Bash(bc *)",
-      "Bash(chezmoi *)",
       "Bash(diff *)",
       "Bash(jq *)",
-      "Bash(just *)",
       "Bash(lsof *)",
+      "Bash(task *)", // Task runner invocation is freely allowed.  Write access to the taskfiles themselves is protected by Ask.
       "Bash(test *)",
+      "Bash(xxd)", // this invocation can be used to read, but not to write (so no " *" after it)
       "Bash(zk *)",
       // Node.js
       "Bash(pnpm list *)",
@@ -155,6 +154,17 @@
       "Bash(gh pr ready *)",
       "Bash(gh pr review *)",
       "Bash(gh pr update-branch *)",
+      // Task must run the repo's own taskfiles, which are the reviewed ones. These flags are the only ways to point it elsewhere (there is no environment variable equivalent -- https://github.com/go-task/task/issues/1721 was closed as a duplicate with nothing implemented), and `/tmp` is writable without a prompt, so without these denials `Bash(task *)` would be an allow-anything entry.
+      "Bash(task -t *)",
+      "Bash(task --taskfile *)",
+      "Bash(task --taskfile=*)",
+      "Bash(task --entrypoint *)",
+      "Bash(task --entrypoint=*)",
+      "Bash(task -d *)",
+      "Bash(task --dir *)",
+      "Bash(task --dir=*)",
+      "Bash(task -g *)",
+      "Bash(task --global *)",
 
       // Destructive File Operations
       "Bash(chmod -R *)",
@@ -172,6 +182,7 @@
       // Git & Version Control
       "Bash(git push -f *)",
       "Bash(git push --force*)",
+      "Bash(git push --tags*)",
       // Node.js
       "Bash(npm publish *)",
       // System Administration

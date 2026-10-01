@@ -1,3 +1,10 @@
+# ============== WARNING ==============================================================================
+# File is managed by copier template: gh:LabAutomationAndScreening/copier-base-template.git
+# See .config/.copier-managed-files.json for details.
+#
+# You are welcome to make changes to this file in your repo if they are custom to your project,
+# but if the change should be shared with other projects, please backport it to the template repo.
+# =====================================================================================================
 # Scratch / temp files
 tmp/
 
@@ -72,6 +79,7 @@ test-screenshots/
 playwright-report/
 test-results/
 .vitest-attachments/
+mutants/
 
 # test coverage
 tests/__coverage__
@@ -114,5 +122,11 @@ dist
 
 # macOS dev cleanliness
 **/.DS_Store
+
+# Devcontainer
+# The devcontainer CLI writes this lock file to pin feature digests, but we are not using it yet
+.devcontainer/devcontainer-lock.json
+# Written by initialize-command.sh on every devcontainer start
+.devcontainer/.env
 
 # Ignores specific to this repository
