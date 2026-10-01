@@ -1,0 +1,38 @@
+# ============== WARNING ==============================================================================
+# File is managed by copier template: gh:LabAutomationAndScreening/copier-base-template.git
+# See .config/.copier-managed-files.json for details.
+#
+# You are welcome to make changes to this file in your repo if they are custom to your project,
+# but if the change should be shared with other projects, please backport it to the template repo.
+# =====================================================================================================
+extend = "./ruff.toml"
+
+[lint]
+ignore = [
+    "D100", # no module docstrings needed for tests
+    "D101", # no class docstrings needed for tests
+    "D102", # no method docstrings needed for tests
+    "D103", # no function docstrings needed for tests
+    "D104", # no package docstrings needed for tests
+    "FBT001", # booleans are often used in parametrized test cases as positional arguments, and test function argument specifications cannot usually easily include keyword arguments anyway
+    "N802", # test function naming conventions differ from source code
+    "S101", # assert is definitely needed in test cases
+    "S311", # pseudo-randomness is fine for test cases
+    "TID252", # sometimes you can't use absolute imports in test cases for importing things within the tests, because they're not a true package or have conflicting namespaces
+    "TRY003", # tests don't need to create custom exception classes, generally you want to throw an AssertionError with a message anyway
+    "TC001", "TC002", "TC003" # we don't need to worry about TYPE_CHECKING guards in tests---needless complication for marginal benefit
+]
+
+unfixable = [
+    "SIM117", # pytest.raises context managers should generally be separate from others so they can be very specific about where the error is being raised from, so don't autofix this
+]
+
+[lint.extend-per-file-ignores]
+"!**/tests/**" = ["INP001"] # non-test files aren't part of a package
+
+[lint.flake8-pytest-style]
+raises-require-match-for = ["*"] # ensures we always have a match for our raises statements so that we validate tests fail for the right reason
+
+[lint.flake8-tidy-imports.banned-api]
+"typing.TYPE_CHECKING".msg = "This is in non-source code. There is no reason to be doing TYPE_CHECKING blocks in tests or script. If you do have a need add `# noqa: TID251` with a clarifying comment"
+"__future__.annotations".msg = "__future__.annotations will be deprecated, once 3.13 is EOL. Also see https://peps.python.org/pep-0749/. If this is problematic, turn annotations into strings, or add `# noqa: TID251` with a clarifying comment but likely this import is not necessary at all."

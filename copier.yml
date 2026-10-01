@@ -1,3 +1,10 @@
+# ============== WARNING ==============================================================================
+# File is managed by copier template: gh:LabAutomationAndScreening/copier-base-template.git
+# See .config/.copier-managed-files.json for details.
+#
+# You are welcome to make changes to this file in your repo if they are custom to your project,
+# but if the change should be shared with other projects, please backport it to the template repo.
+# =====================================================================================================
 # Questions specific to this template
 
 
@@ -149,12 +156,40 @@ pnpm_minimum_release_age_exclude:
     default: ""
 
 
+_migrations:
+  # PNPM12-MIGRATION -- this whole block is transient: it carries repos across the pnpm 11 -> 12 boundary and
+  # nothing else. Delete both entries (and with them `_migrations` entirely, if nothing else has been added)
+  # once every downstream repo has taken an update that ran them. Grep PNPM12-MIGRATION for the rest.
+  # Both of these run in the `before` stage, while the repo's own pnpm-workspace.yaml is still on disk and
+  # before anything in the update reaches for pnpm. pnpm 12 cannot load a manifest whose
+  # minimumReleaseAgeExclude is a scalar -- it fails every pnpm command, `pnpm --version` included -- so the
+  # value has to be a list before the pnpm 12 install below, and `pnpm config` cannot do the rewrite itself.
+  - command: python3 '{{ _copier_conf.src_path }}/src/copier_tasks/normalize_pnpm_minimum_release_age_exclude.py'
+    when: "{{ _stage == 'before' }}"
+  # The devcontainer's pnpmVersion only takes effect on a rebuild, so an update applied from an existing
+  # container still has the old pnpm on PATH while the tasks that read pnpm 12 settings run. The version is
+  # hardcoded rather than templated because this migration exists to cross the pnpm 11 -> 12 boundary, and
+  # the check keeps it from downgrading a container that is already on 12 or newer.
+  - command: |
+        installed_major="$(pnpm --version 2>/dev/null | cut -d. -f1)"
+        if [ -z "$installed_major" ] || [ "$installed_major" -lt 12 ]; then
+            echo "Installing pnpm 12.4.2 (found '${installed_major:-none}') so pnpm 12 workspace settings can be read before a devcontainer rebuild..."
+            npm install -g pnpm@12.4.2
+        fi
+    when: "{{ _stage == 'before' }}"
+
 _tasks:
   - command: |
         python3 '{{ _copier_conf.src_path }}/src/copier_tasks/remove_precommit_hooks.py' \
             --hook-id-regex '^\s*-\s+id:\s+merge-claude-settings\s*$' \
             --target-file .pre-commit-config.yaml
     when: "{{ not install_claude_cli }}"
+  - when: "{{ not has_backend }}"
+    command: |
+        echo "Removing graphql_lambda-related hooks because has_backend is false..."
+        python3 '{{ _copier_conf.src_path }}/src/copier_tasks/remove_precommit_hooks.py' \
+            --hook-id-regex '^\s*-\s+id:\s+.*graphql[_-]lambda' \
+            --target-file .pre-commit-config.yaml
   # Copier does not preserve executable permissions when instantiating the template, so we set them explicitly here.
   # git update-index is also needed because with core.fileMode=false (common on WSL2) git ignores the on-disk exec bit,
   # so a plain `git add` would not capture it. It is guarded on the file being tracked, since on an initial `copier copy`
@@ -167,7 +202,16 @@ _tasks:
             fi
         fi
   - command: |
-        for script in .claude/skills/address-pr-comments/check-footer.py .claude/skills/address-pr-comments/fetch-pr-comments.py .claude/skills/address-pr-comments/post-reply.py; do
+        for script in .claude/skills/address-pr-comments/check-footer.py .claude/skills/address-pr-comments/commit-link.py .claude/skills/address-pr-comments/fetch-pr-comments.py .claude/skills/address-pr-comments/post-reply.py .claude/skills/address-pr-comments/verify-env.py; do
+            if [ -f "$script" ]; then
+                chmod +x "$script"
+                if git ls-files --error-unmatch "$script" > /dev/null 2>&1; then
+                    git update-index --chmod=+x "$script"
+                fi
+            fi
+        done
+  - command: |
+        for script in .claude/skills/fix-mutants/check-results.py .claude/skills/fix-mutants/group-by-line.py .claude/skills/fix-mutants/list-survived.py .claude/skills/fix-mutants/run-mutmut.py .claude/skills/fix-mutants/show-mutant.py .claude/skills/fix-mutants/verify-mutant.py; do
             if [ -f "$script" ]; then
                 chmod +x "$script"
                 if git ls-files --error-unmatch "$script" > /dev/null 2>&1; then
@@ -180,23 +224,24 @@ _tasks:
         python3 '{{ _copier_conf.src_path }}/src/copier_tasks/ensure_pnpm_minimum_release_age_exclude.py' --patterns "$PNPM_PATTERNS"
     when: "{{ pnpm_minimum_release_age_exclude }}"
   - command: |
-        if [ -f ruff.toml ]; then
+        if [ -f .config/ruff.toml ]; then
             echo "Updating ruff target-version from python_version..."
             py_major_minor="$(printf '%s' '{{ python_version }}' | cut -d. -f1,2)"
             py_tag="py$(printf '%s' "$py_major_minor" | tr -d '.')"
-            sed -i -E 's/^target-version = "py[0-9]+"/target-version = "'"$py_tag"'"/' ruff.toml
+            sed -i -E 's/^target-version = "py[0-9]+"/target-version = "'"$py_tag"'"/' .config/ruff.toml
         else
-            echo "ruff.toml not found; skipping Ruff target-version update."
+            echo ".config/ruff.toml not found; skipping Ruff target-version update."
         fi
-  - when: "{{ not has_backend }}"
-    command: |
-        echo "Removing graphql_lambda-related hooks because has_backend is false..."
-        python3 '{{ _copier_conf.src_path }}/src/copier_tasks/remove_precommit_hooks.py' \
-            --hook-id-regex '^\s*-\s+id:\s+.*graphql[_-]lambda' \
-            --target-file .pre-commit-config.yaml
+  - command: |
+        python3 '{{ _copier_conf.src_path }}/src/copier_tasks/copier_provenance.py' \
+            '{{ _copier_conf.src_path }}/template' \
+            '.' \
+            --template-src '{{ _src_path }}'
 
 # Additional Settings
 _min_copier_version: "9.8"
+
+_answers_file: ".config/.copier-answers.yml"
 
 _subdirectory: template
 
