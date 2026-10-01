@@ -39,7 +39,9 @@ repo_root = Path(__file__).parent.parent.parent.parent
 
 def _get_mime_type(file_path: Path) -> str:
     content_type, _ = mimetypes.guess_type(file_path)
-    return content_type or "application/octet-stream"
+    if content_type is None:
+        return "application/octet-stream"
+    return content_type
 
 
 def _compute_directory_hash(base_dir: Path) -> str:
@@ -144,8 +146,9 @@ def pulumi_program() -> None:
         origin_id = "S3OriginMyBucket"
         origin_domain = app_website_bucket.website_url.apply(lambda full_url: full_url.removeprefix("http://"))
         viewer_certificate = cloudfront.DistributionViewerCertificateArgs(cloud_front_default_certificate=True)
-        aliases = [APP_DOMAIN_NAME] if ATTACH_ACM_CERT_TO_CLOUDFRONT else []
+        aliases: list[str] = []
         if ATTACH_ACM_CERT_TO_CLOUDFRONT:
+            aliases.append(APP_DOMAIN_NAME)
             viewer_certificate = cloudfront.DistributionViewerCertificateArgs(  # TODO: determine if this needs to be attached to EVERY distribution, or just a single distribution unrelated to the actual bucket
                 acm_certificate_arn=certificate.arn,
                 ssl_support_method="sni-only",
