@@ -16,11 +16,9 @@ project-excludes = [
     "../**/copier_template_resources",
     "../**/.claude/plugins", # similar to vendor_files, but these are gitignored and can contain arbitrary code, so exclude from type checking but not mutation testing
 ]
-# without this explicit "project-includes" and "search-path", pyrefly struggles to understand the tests folder
-project-includes = [
-                    "../src",
-                    "../tests"
-                  ]
+# no "project-includes": this config is shared by multiple projects in the monorepo (each with its own venv), so each pre-commit hook passes its own project's paths. Running without paths fails loudly because nothing in .config/ matches
+
+# without this explicit "search-path", pyrefly struggles to understand the tests folder
 search-path = [".."]
 disable-project-excludes-heuristics = true # with this being enabled by default, pyrefly thinks the src is excluded because it's an editable local install
 python-platform = "linux"
