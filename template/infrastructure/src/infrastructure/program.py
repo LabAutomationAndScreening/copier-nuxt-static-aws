@@ -129,7 +129,7 @@ def pulumi_program() -> None:
     )
     _ = s3.BucketPolicy(
         append_resource_suffix("app-website"),
-        bucket=app_website_bucket.bucket_name,  # pyright: ignore[reportArgumentType] # it doesn't seem like it's possible for the bucket name to actually be Output[None]...not sure why the typing suggests that...and not sure a way to assert about Output subtypes
+        bucket=app_website_bucket.bucket_name,
         policy_document=policy_json,
     )
     static_files_dir = repo_root / APP_DIRECTORY_NAME / ".output" / "public"
