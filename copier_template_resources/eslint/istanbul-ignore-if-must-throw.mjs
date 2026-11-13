@@ -55,8 +55,7 @@ export default {
   meta: {
     type: "problem",
     docs: {
-      description:
-        "Require `istanbul ignore if` branches to throw a defensive assertion naming the violated invariant",
+      description: "Require `istanbul ignore if` branches to throw a defensive assertion naming the violated invariant",
     },
     schema: [],
     messages: {

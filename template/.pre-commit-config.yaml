@@ -9,12 +9,6 @@ minimum_pre_commit_version: 4.5.1
 # run `pre-commit autoupdate --freeze` to update all hooks
 default_install_hook_types: [pre-commit, post-checkout]
 repos:
-  # Git-related
-  - repo: https://github.com/jumanjihouse/pre-commit-hooks
-    rev: 38980559e3a605691d6579f96222c30778e5a69e # frozen: 3.0.0
-    hooks:
-      - id: git-dirty
-
   # package management
   - repo: local
     hooks:
@@ -29,8 +23,8 @@ repos:
     - id: sync-dependencies-on-commit-graphql-lambda
       name: ensure graphql-lambda python dependencies are up to date during commits
       stages: [pre-commit]
-       # When the install does change things, it exits 0, so needed to check for the phrase 'operations' in stdout in order to cause things pre-commit command to fail
-      entry: python -c "import subprocess,sys; results=subprocess.run(['uv', 'sync', '--frozen', '--directory=./graphql_lambda'],timeout=360,capture_output=True); print ('stdout- ' + results.stdout.decode('utf-8', 'strict')); print ('stderr- ' + results.stderr.decode('utf-8', 'strict')); sys.exit(int(results.returncode or int('Installed' in results.stdout.decode('utf-8', 'strict'))));"
+       # When the install does change things, it exits 0, so needed to check for the phrases 'Installed' or 'Uninstalled' in stderr (where uv writes its progress) in order to cause things pre-commit command to fail. 'Uninstalled' is checked separately because a removal-only sync never prints 'Installed'
+      entry: python -c "import subprocess,sys; results=subprocess.run(['uv', 'sync', '--frozen', '--directory=./graphql_lambda'],timeout=360,capture_output=True); stderr=results.stderr.decode('utf-8', 'strict'); print ('stdout- ' + results.stdout.decode('utf-8', 'strict')); print ('stderr- ' + stderr); sys.exit(int(results.returncode or int('Installed' in stderr or 'Uninstalled' in stderr)));"
       # don't pass filenames else the command line sees them twice
       pass_filenames: false
       language: system
@@ -57,8 +51,8 @@ repos:
     - id: sync-dependencies-on-commit-infrastructure
       name: ensure infrastructure python dependencies are up to date during commits
       stages: [pre-commit]
-       # When the install does change things, it exits 0, so needed to check for the phrase 'operations' in stdout in order to cause things pre-commit command to fail
-      entry: python -c "import subprocess,sys; results=subprocess.run(['uv', 'sync', '--frozen', '--directory=./infrastructure'],timeout=360,capture_output=True); print ('stdout- ' + results.stdout.decode('utf-8', 'strict')); print ('stderr- ' + results.stderr.decode('utf-8', 'strict')); sys.exit(int(results.returncode or int('Installed' in results.stdout.decode('utf-8', 'strict'))));"
+       # When the install does change things, it exits 0, so needed to check for the phrases 'Installed' or 'Uninstalled' in stderr (where uv writes its progress) in order to cause things pre-commit command to fail. 'Uninstalled' is checked separately because a removal-only sync never prints 'Installed'
+      entry: python -c "import subprocess,sys; results=subprocess.run(['uv', 'sync', '--frozen', '--directory=./infrastructure'],timeout=360,capture_output=True); stderr=results.stderr.decode('utf-8', 'strict'); print ('stdout- ' + results.stdout.decode('utf-8', 'strict')); print ('stderr- ' + stderr); sys.exit(int(results.returncode or int('Installed' in stderr or 'Uninstalled' in stderr)));"
       # don't pass filenames else the command line sees them twice
       pass_filenames: false
       language: system
@@ -94,7 +88,7 @@ repos:
           (?x)^(
               .*/vendor_files/.*|
               .*tests/.*/__snapshots__/.*|
-              .*/generated/open[-_]api/.*|
+              (?:.*/)?generated/.*|
           )$
       - id: end-of-file-fixer
         # the XML formatter hook doesn't leave a blank line at the end, so excluding XML files from this hook to avoid conflicts
@@ -102,8 +96,7 @@ repos:
           (?x)^(
               \.github/pull_request_template.md|
               template/\.github/pull_request_template.md|
-              .*generated/graphql.ts|
-              .*/generated/open[-_]api/.*|
+              (?:.*/)?generated/.*|
               .*tests/.*/__snapshots__/.*|
               .devcontainer/devcontainer-lock.json|
               .*\.copier-answers\.yml(\.jinja(-base)?)?|
@@ -112,45 +105,39 @@ repos:
               .*/vendor_files/.*|
           )$
 
-  - repo: https://github.com/biomejs/pre-commit
-    rev: a450e9c04887b1305951c298db5999cd30155f74  # frozen: v2.1.1
+  # `language: system` so the hooks run the one Biome that .devcontainer/install-ci-tooling.py installs, which the VS Code
+  # extension uses too, instead of a second copy whose version has to be kept in sync (https://biomejs.dev/recipes/git-hooks/#pre-commit)
+  - repo: local
     hooks:
       - id: biome-check
-        # exclude generated files from codegen and strawberry
-        exclude: |
-          (?x)^(
-              .*generated/graphql.ts|
-              .*/generated/open[-_]api/.*|
-              .*/schema.graphql|
-          )$
+        name: biome check
+        entry: biome check --write --files-ignore-unknown=true --no-errors-on-unmatched --config-path .config/biome.jsonc
+        language: system
+        types: [text]
+        files: '\.(jsx?|tsx?|c(js|ts)|m(js|ts)|d\.(ts|cts|mts)|jsonc?|css|svelte|vue|astro|graphql|gql)$'
+        require_serial: true
+      - id: biome-format-config
+        name: format the biome config itself
+        # run from .config/ so Biome treats the file as its own root config instead of rejecting it as a second one
+        entry: bash -c 'cd .config && biome format --write biome.jsonc'
+        language: system
+        files: ^\.config/biome\.jsonc$
+        pass_filenames: false
 
   - repo: https://github.com/rbubley/mirrors-prettier
     rev: 0ee178619d696787ca73d210cc191d720868c631  # frozen: v3.9.6
     hooks:
       - id: prettier
         args: [--config, .config/.prettierrc]
+        # Biome formats everything else. Its Vue and HTML formatting is still experimental
         # TODO: get template YAML and MD files more in line with prettier expectations so we can start using prettier on those too
         exclude: |
           (?x)^(
-              .devcontainer/devcontainer.json|
-              .devcontainer/devcontainer-lock.json|
-              .*devcontainer.json|
-              .*tsconfig.json|
               .*/__snapshots__/.*|
-              .*.min.js|
-              .*.min.css|
-              .*.umd.js|
-              .*.yaml|
-              .*.yml|
-              .*.md|
-              .*.jsonc|
               .*/vendor_files/.*|
-              .*/schema.graphql|
-              .*/generated/open[-_]api/.*|
-              .*generated/graphql.ts|
               template/.*|
           )$
-        files: (.*.json)|(.*.ts)|(.*.jsx)|(.*.tsx)|(.*.yaml)|(.*.yml)|(.*.md)|(.*.html)|(.*.css)|(.*.scss)|(.*.less)|(.*.vue)|(.*.graphql)|(.*.gql)
+        files: \.(vue|html)$
 
 
   - repo: https://github.com/pamoller/xmlformatter
@@ -267,8 +254,7 @@ repos:
         files: src/.+\.py$
         exclude: |
           (?x)^(
-              .*/generated/graphql/.*|
-              .*/generated/open[-_]api/.*|
+              (?:.*/)?generated/.*|
               template/.*|
           )$
       - id: ruff
@@ -277,36 +263,71 @@ repos:
         files: ^(?!src/)(?!.+/src/).+\.py$
         exclude: |
           (?x)^(
-              .*/generated/graphql/.*|
-              .*/generated/open[-_]api/.*|
+              (?:.*/)?generated/.*|
               template/.*|
           )$
       - id: ruff-format
         args: [--config=./.config/ruff.toml]
         exclude: |
           (?x)^(
-              .*/generated/graphql/.*|
-              .*/generated/open[-_]api/.*|
+              (?:.*/)?generated/.*|
           )$
 
-  - repo: https://github.com/pylint-dev/pylint
-    rev: f5a6e3b1de17502747a40d7f92f285ccf9c6c459  # frozen: v4.0.7
+  - repo: local
     hooks:
       - id: pylint
         name: pylint
+        # Runs pylint on every changed Python file, exactly as pylint's own hook does (`entry: pylint`). It is a local
+        # hook only so that each changed skill under .claude/skills/ is checked for duplicate code on its own, together
+        # with the skill's other tracked Python files: a skill is meant to stand alone, so it may repeat a helper that
+        # another skill also has. All other code is checked together, as one group.
+        entry: |
+          python -c '
+          import os
+          import subprocess
+          import sys
+
+          groups: dict[str, set[str]] = {}
+          for path in sys.argv[1:]:
+              parts = path.split("/")
+              skill = "/".join(parts[:3]) if path.startswith(".claude/skills/") and len(parts) > 3 else ""
+              groups.setdefault(skill, set()).add(path)
+          exit_code = 0
+          for skill, files in sorted(groups.items()):
+              if skill:
+                  tracked = subprocess.run(["git", "ls-files", "-z", "--", skill], capture_output=True, text=True, check=True).stdout
+                  # a tracked file deleted but not yet staged is still listed, and pylint fails on a path that is not there
+                  files |= {
+                      f
+                      for f in tracked.split("\0")
+                      if f.endswith(".py") and not f.endswith("/__init__.py") and "/generated/" not in f and os.path.isfile(f)
+                  }
+              exit_code |= subprocess.run([sys.executable, "-m", "pylint", "--rcfile=./.config/pylintrc.toml", *sorted(files)], check=False).returncode
+          sys.exit(exit_code)
+          '
+        language: python
+        # the only place pylint's version is pinned; pre-commit autoupdate does not bump additional_dependencies
+        additional_dependencies: ['pylint==4.0.7']
+        types: [python]
         # exclude any generated code
         # flagging duplicate code for __all__ lists is a false positive
         # exclude the template files---duplication within them will be discovered during CI of that template instantiation
         exclude: |
           (?x)^(
-              .*/generated/graphql/.*|
-              .*/generated/open[-_]api/.*|
+              (?:.*/)?generated/.*|
               .*__init__\.py|
               template/.*|
           )$
-        args:
-          - --rcfile=./.config/pylintrc.toml
+        require_serial: true
         verbose: true
+
+  - repo: local
+    hooks:
+      - id: test-name-clause-separator
+        name: separate mid-name Then/When clauses in test names with a double underscore, and start a leading clause with a single one
+        entry: '^\s*(async\s+)?def test_(_|\w*[^_]_(Then|When)_)'
+        language: pygrep
+        files: (^|/)test_[^/]*\.py$
 
   - repo: local
     hooks:
@@ -333,8 +354,7 @@ repos:
         files: 'infrastructure/.+\.py$'
         exclude: |
           (?x)^(
-              .*/generated/graphql/.*|
-              .*/generated/open[-_]api/.*|
+              (?:.*/)?generated/.*|
           )$
         # don't pass filenames else the command line sees them twice
         pass_filenames: false
@@ -353,6 +373,15 @@ repos:
         name: merge Claude settings
         entry: bash -c '[[ "${GITHUB_ACTIONS:-}" == "true" || "${CI:-}" == "true" ]] && exit 0; bash .claude/helpers/merge-claude-settings.sh'
         files: ^\.claude/settings/.*\.(json|jsonc)$
+        pass_filenames: false
+        language: system
+
+      - id: check-claude-paths
+        # A skill's or agent's instructions name scripts by path, and an agent types a path as written, so a renamed or
+        # removed file breaks them silently. Any change under .claude/ re-checks every path written in a document there.
+        name: check paths written in Claude documents exist
+        entry: python3 .claude/helpers/check_claude_paths.py
+        files: ^\.claude/
         pass_filenames: false
         language: system
 
