@@ -18,7 +18,8 @@ repo_names_for_codespaces_read_permissions: ''
 
 
 
-node_version: 24.11.1
+
+node_version: 24.22.1
 pnpm_minimum_release_age_exclude: ''
 
 
