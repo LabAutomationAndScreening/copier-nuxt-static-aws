@@ -1,3 +1,4 @@
 {% raw %}APP_DOMAIN_NAME = "{% endraw %}{{ app_domain_name }}{% raw %}"
 APP_DIRECTORY_NAME = "{% endraw %}{{ app_name }}{% raw %}_app"
-ATTACH_ACM_CERT_TO_CLOUDFRONT = {% endraw %}{{ 'True' if attach_acm_cert_to_cloudfront else 'False' }}{% raw %}{% endraw %}
+ATTACH_ACM_CERT_TO_CLOUDFRONT = {% endraw %}{{ 'True' if attach_acm_cert_to_cloudfront else 'False' }}{% raw %}
+REDIRECT_BARE_DOMAIN_TO_APP_DOMAIN = {% endraw %}{{ 'True' if redirect_bare_domain_to_app_domain else 'False' }}{% raw %}{% endraw %}

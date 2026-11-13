@@ -140,8 +140,14 @@ app_domain_name:
 
 attach_acm_cert_to_cloudfront:
     type: bool
-    help: Has the ACM Certificate been fully validated and is ready to attach to the Cloudfront domain?
+    help: Has the ACM Certificate been fully validated and is ready to attach to the Cloudfront domain? For a new stack, answer no for the first deploy and yes once the certificate shows ISSUED.
     default: no
+
+redirect_bare_domain_to_app_domain:
+    type: bool
+    when: "{{ app_domain_name.startswith('www.') }}" # the bare domain is app_domain_name without its leading www., so any other domain has none
+    help: Should the certificate also cover the bare domain (e.g. initech.com for www.initech.com), and CloudFront 301-redirect requests for it to the app domain? Changing this answer replaces the certificate, which CloudFront rejects while it is attached, so change it only in an update where attach_acm_cert_to_cloudfront is no, and re-attach once the new certificate shows ISSUED.
+    default: "{{ app_domain_name.startswith('www.') }}"
 
 
 # Questions managed by upstream template

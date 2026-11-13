@@ -1,4 +1,5 @@
 import hashlib
+import json
 import logging
 import mimetypes
 import os
@@ -18,6 +19,7 @@ from pulumi import ResourceOptions
 from pulumi import export
 from pulumi_aws.acm import Certificate
 from pulumi_aws.acm.outputs import CertificateDomainValidationOption
+from pulumi_aws.cloudfront import Function
 from pulumi_aws.iam import GetPolicyDocumentStatementArgs
 from pulumi_aws.iam import GetPolicyDocumentStatementPrincipalArgs
 from pulumi_aws.iam import get_policy_document
@@ -29,8 +31,35 @@ from pulumi_command.local import Command
 from .jinja_constants import APP_DIRECTORY_NAME
 from .jinja_constants import APP_DOMAIN_NAME
 from .jinja_constants import ATTACH_ACM_CERT_TO_CLOUDFRONT
+from .jinja_constants import REDIRECT_BARE_DOMAIN_TO_APP_DOMAIN
 
 RAW_DOMAIN_NAME = APP_DOMAIN_NAME.removeprefix("www.")
+
+# CloudFront Functions (cloudfront-js-2.0) run in a restricted JavaScript runtime at the edge for every viewer request,
+# so this stays dependency-free. BARE_DOMAIN and APP_DOMAIN are prepended as variable declarations when it is deployed.
+# rawQueryString() is the query string exactly as the viewer sent it (undefined when the URL has no `?`); the parsed
+# request.querystring object would lose the parameters' order.
+# TODO: once this template has an E2E harness that runs against a deployed stack, cover the redirect there:
+#   - https://<bare>/path?b=2&a=1 answers 301 with Location https://<app>/path?b=2&a=1 (path and parameter order kept)
+#   - a URL ending in a bare `?`, and one with no query string at all
+#   - a request for the app domain passes through and is served (200)
+#   - http://<bare> ends at https://<app>
+BARE_DOMAIN_REDIRECT_FUNCTION_BODY = """
+function handler(event) {
+    var request = event.request;
+    if (request.headers.host.value !== BARE_DOMAIN) {
+        return request;
+    }
+    var querystring = request.rawQueryString();
+    return {
+        statusCode: 301,
+        statusDescription: "Moved Permanently",
+        headers: {
+            location: { value: "https://" + APP_DOMAIN + request.uri + (querystring === undefined ? "" : "?" + querystring) },
+        },
+    };
+}
+"""
 
 logger = logging.getLogger(__name__)
 
@@ -136,9 +165,18 @@ def pulumi_program() -> None:
 
     all_uploads = _upload_assets_to_s3(bucket_id=app_website_bucket.id, base_dir=static_files_dir)
     if env in PROTECTED_ENVS:
+        # Changing the certificate's names replaces it, which CloudFront rejects while the new certificate is still pending
+        # validation. So toggle REDIRECT_BARE_DOMAIN_TO_APP_DOMAIN only in a deploy where ATTACH_ACM_CERT_TO_CLOUDFRONT is
+        # False, and re-attach in a later deploy once the new certificate is ISSUED.
+        subject_alternative_names: list[str] | None = (
+            None  # None rather than [] so stacks without the redirect see no diff
+        )
+        if REDIRECT_BARE_DOMAIN_TO_APP_DOMAIN:
+            subject_alternative_names = [RAW_DOMAIN_NAME]
         certificate = Certificate(
             append_resource_suffix("certificate"),
             domain_name=f"*.{RAW_DOMAIN_NAME}",
+            subject_alternative_names=subject_alternative_names,
             validation_method="DNS",
             region="us-east-1",  # ACM certificates for CloudFront must be in us-east-1 (see: https://docs.aws.amazon.com/acm/latest/userguide/acm-services.html#acm-cloudfront)
             tags=common_tags(),
@@ -147,8 +185,28 @@ def pulumi_program() -> None:
         origin_domain = app_website_bucket.website_url.apply(lambda full_url: full_url.removeprefix("http://"))
         viewer_certificate = cloudfront.DistributionViewerCertificateArgs(cloud_front_default_certificate=True)
         aliases: list[str] = []
+        function_associations: list[cloudfront.DistributionFunctionAssociationArgs] | None = (
+            None  # None rather than [] so stacks without the redirect see no diff
+        )
+        bare_domain_redirect: Function | None = None
+        if REDIRECT_BARE_DOMAIN_TO_APP_DOMAIN:
+            bare_domain_redirect = Function(
+                append_resource_suffix("bare-domain-redirect"),
+                name=append_resource_suffix("bare-domain-redirect"),
+                runtime="cloudfront-js-2.0",
+                comment=f"Redirects {RAW_DOMAIN_NAME} to https://{APP_DOMAIN_NAME}",
+                code=f"var BARE_DOMAIN = {json.dumps(RAW_DOMAIN_NAME)};\nvar APP_DOMAIN = {json.dumps(APP_DOMAIN_NAME)};\n{BARE_DOMAIN_REDIRECT_FUNCTION_BODY}",
+                publish=True,
+            )
         if ATTACH_ACM_CERT_TO_CLOUDFRONT:
             aliases.append(APP_DOMAIN_NAME)
+            if bare_domain_redirect is not None:
+                aliases.append(RAW_DOMAIN_NAME)
+                function_associations = [
+                    cloudfront.DistributionFunctionAssociationArgs(
+                        event_type="viewer-request", function_arn=bare_domain_redirect.arn
+                    )
+                ]
             viewer_certificate = cloudfront.DistributionViewerCertificateArgs(  # TODO: determine if this needs to be attached to EVERY distribution, or just a single distribution unrelated to the actual bucket
                 acm_certificate_arn=certificate.arn,
                 ssl_support_method="sni-only",
@@ -177,6 +235,7 @@ def pulumi_program() -> None:
                     viewer_protocol_policy="redirect-to-https",
                     allowed_methods=["GET", "HEAD"],
                     cached_methods=["GET", "HEAD"],
+                    function_associations=function_associations,
                     forwarded_values=cloudfront.DistributionForwardedValuesArgs(
                         query_string=False, cookies=cloudfront.DistributionCookiesArgs(forward="none")
                     ),
