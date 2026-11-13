@@ -7,8 +7,7 @@ export default defineNuxtConfig({
   },
   devtools: { enabled: process.env.NODE_ENV !== "test" },
   telemetry: process.env.NODE_ENV !== "test",
-  // the conditional modules added in by the template make it complicated to format consistently...at least with only 3 'always included' modules
-  // prettier-ignore
+  // biome-ignore format: one module per line, so a module a project adds later shows up as a one-line diff
   modules: [
     "@nuxt/ui",
     ["@nuxt/eslint", { devOnly: true }],
