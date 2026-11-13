@@ -35,3 +35,4 @@ app_name: my_app
 has_backend: true
 app_domain_name: www.myapp.great-company.com
 attach_acm_cert_to_cloudfront: true
+redirect_bare_domain_to_app_domain: true
