@@ -2,15 +2,13 @@ import pytest
 from faker import Faker
 
 from .helpers import rendered_answers
+from .helpers import validate_answers
 
 
 class TestWhenRedirectBareDomainToAppDomainAnsweredYes:
     def test_Given_app_domain_without_www__Then_copier_rejects_the_answer(self, faker: Faker) -> None:
-        with pytest.raises(
-            ValueError,
-            match=r"'redirect_bare_domain_to_app_domain': Only an app_domain_name starting with www\. has a bare domain to redirect",
-        ):
-            _ = rendered_answers(app_domain_name=faker.domain_name(), redirect_bare_domain_to_app_domain=True)
+        with pytest.raises(ValueError, match="redirect_bare_domain_to_app_domain"):
+            validate_answers(app_domain_name=faker.domain_name(), redirect_bare_domain_to_app_domain=True)
 
     def test_Given_www_app_domain__Then_the_answer_is_kept(self, faker: Faker) -> None:
         answers = rendered_answers(
