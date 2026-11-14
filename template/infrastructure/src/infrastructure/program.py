@@ -194,7 +194,7 @@ def pulumi_program() -> None:
                 append_resource_suffix("bare-domain-redirect"),
                 name=append_resource_suffix("bare-domain-redirect"),
                 runtime="cloudfront-js-2.0",
-                comment=f"Redirects {RAW_DOMAIN_NAME} to https://{APP_DOMAIN_NAME}",
+                comment="Redirects the bare domain to the app domain",
                 code=f"var BARE_DOMAIN = {json.dumps(RAW_DOMAIN_NAME)};\nvar APP_DOMAIN = {json.dumps(APP_DOMAIN_NAME)};\n{BARE_DOMAIN_REDIRECT_FUNCTION_BODY}",
                 publish=True,
             )
