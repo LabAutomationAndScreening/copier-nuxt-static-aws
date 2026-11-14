@@ -148,6 +148,7 @@ redirect_bare_domain_to_app_domain:
     when: "{{ app_domain_name.startswith('www.') }}" # the bare domain is app_domain_name without its leading www., so any other domain has none
     help: Should the certificate also cover the bare domain (e.g. initech.com for www.initech.com), and CloudFront 301-redirect requests for it to the app domain? Changing this answer replaces the certificate, which CloudFront rejects while it is attached, so change it only in an update where attach_acm_cert_to_cloudfront is no, and re-attach once the new certificate shows ISSUED.
     default: "{{ app_domain_name.startswith('www.') }}"
+    validator: "{% if redirect_bare_domain_to_app_domain and not app_domain_name.startswith('www.') %}Only an app_domain_name starting with www. has a bare domain to redirect{% endif %}"
 
 
 # Questions managed by upstream template
