@@ -20,8 +20,8 @@ dependencies = [
     "pytest-cov>=7.1.0",
     "pytest-randomly>=5.0.0",
     "faker>=40.41.0",
-    "pyrefly==1.4.0",
-    "copier==9.18.2",
+    "pyrefly==1.5.0",
+    "copier==9.19.1",
     "copier-template-extensions==0.3.3"
 ]
 
